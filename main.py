@@ -6,11 +6,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from agent import agent
 
 load_dotenv()
-
-
 
 
 app = FastAPI(
@@ -19,10 +16,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+cors_origins_env = os.getenv("CORS_ALLOW_ORIGINS", "*")
+cors_allow_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()] or ["*"]
+
 # Adiciona CORS para flexibilidade do Front-end
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -139,6 +139,8 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=400, detail="A pergunta não pode estar vazia.")
         
     try:
+        from agent import agent
+
         run_response = agent.run(request.pergunta)
         response_text = run_response.content if hasattr(run_response, 'content') else str(run_response)
         return ChatResponse(resposta=response_text)
@@ -454,13 +456,17 @@ def health_check():
         # Teste rápido de query
         db_conn.execute("SELECT 1")
         db_status = "operacional"
+        table_rows = db_conn.execute("SELECT COUNT(*) FROM gold_marketplace_odontogroup").fetchone()[0]
     except Exception as e:
         db_status = f"erro: {str(e)}"
+        table_rows = None
         
     return {
         "status": "healthy",
         "duckdb_status": db_status,
-        "database_file": DB_PATH
+        "database_file": DB_PATH,
+        "database_exists": os.path.exists(DB_PATH),
+        "gold_marketplace_odontogroup_rows": table_rows
     }
 
 @app.on_event("shutdown")

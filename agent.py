@@ -22,9 +22,11 @@ elif not db_url.startswith("duckdb://"):
     db_url = f"duckdb:///{formatted_url}"
 
 engine = create_engine(db_url, connect_args={'read_only': True})
-agent_db = SqliteDb(db_file=str(BACK_DIR / "aibi_storage.db"))
+agent_storage_path = Path(os.getenv("AIBI_STORAGE_PATH", BACK_DIR / "aibi_storage.db"))
+agent_storage_path.parent.mkdir(parents=True, exist_ok=True)
+agent_db = SqliteDb(db_file=str(agent_storage_path))
 
-PROMPTS_DIR = BACK_DIR / "prompts"
+PROMPTS_DIR = Path(os.getenv("PROMPTS_DIR", BACK_DIR / "prompts"))
 
 with open(PROMPTS_DIR / "knowledge.JSON", "r", encoding="utf-8") as f:
     db_context = f.read()
