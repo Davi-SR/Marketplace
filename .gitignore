@@ -18,6 +18,3 @@ data/*
 !data/.gitkeep
 runtime/*
 !runtime/.gitkeep
-
-knowledge.json
-prompt.md
