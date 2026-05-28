@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marketplace Odontogroup - Dashboard (Faixa Etária)</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+        // Trigger table bar animations on load
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                document.querySelector('.nav-load').classList.add('loaded');
+                document.body.classList.add('loaded');
+            }, 100);
+
+            const elements = document.querySelectorAll('.reveal');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('active');
+                }, 150 + (index * 100));
+            });
+            
+            // Initial Load
+            updateDashboard();
+        });
+
+    
+        // Filter Operadoras
+        async function loadFiltroOperadoras() {
+            try {
+                let tempFilters = { ...activeFilters };
+                tempFilters.operadora = null;
+
+                const params = new URLSearchParams();
+                if (tempFilters.uf) params.append('uf', tempFilters.uf);
+                if (tempFilters.regiao) params.append('regiao', tempFilters.regiao);
+                const qs = params.toString() ? `?${params.toString()}` : '';
+
+                const res = await fetch(`${API_BASE}/api/dashboard/filtros-operadoras${qs}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const dados = await res.json();
+
+                const select = document.getElementById('filtro-operadora');
+                if(!select) return;
+                
+                const currentVal = activeFilters.operadora || "Todos";
+                select.innerHTML = '<option value="Todos" class="bg-[#251e33] text-slate-200">Selecione uma Operadora</option>';
+
+                let found = currentVal === "Todos";
+                dados.forEach(op => {
+                    const opt = document.createElement('option');
+                    opt.value = op;
+                    opt.textContent = op;
+                    opt.className = 'bg-[#251e33] text-slate-200';
+                    select.appendChild(opt);
+                    if (op === currentVal) found = true;
+                });
+
+                if (!found && activeFilters.operadora) {
+                    activeFilters.operadora = null;
+                }
+                select.value = activeFilters.operadora || "Todos";
+            } catch (err) {
+                console.error('Erro ao carregar filtro de operadoras:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('filtro-operadora');
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    activeFilters.operadora = e.target.value === "Todos" ? null : e.target.value;
+                    updateDashboard(true);
+                });
+            }
+        });
+
+        // Load Saldo de Adesões
+        async function loadSaldoAdesoes() {
+            try {
+                const res = await fetch(`${API_BASE}/api/dashboard/saldo-adesoes${getQueryString()}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                const tbody = document.getElementById('tb-saldo-adesoes');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+
+                data.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Golden Highlight for ODONTOGROUP
+                    if (row.is_odontogroup) {
+                        tr.className = "bg-yellow-500/10 hover:bg-yellow-500/20 shadow-[inset_0_0_10px_rgba(234,179,8,0.1)] transition-colors";
+                    }
+
+                    // Icon for Saldo
+                    let saldoHTML = '';
+                    if (row.saldo > 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-green-400 font-bold"><iconify-icon icon="solar:check-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else if (row.saldo < 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-red-400 font-bold"><iconify-icon icon="solar:close-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-slate-400 font-bold"><span>0</span></div>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="text-left pl-4 font-bold ${row.is_odontogroup ? 'text-yellow-400' : 'text-slate-200'}">${row.nome_operadora}</td>
+                        <td class="center">${saldoHTML}</td>
+                        <td class="center text-slate-300">${formatNumber(row.canceladas)}</td>
+                        <td class="center text-slate-300">${formatNumber(row.novas_vidas)}</td>
+                        <td class="center font-extrabold text-white/90">
+                            <div class="flex items-center justify-end pr-2 gap-2 relative w-full h-6 group">
+                                <div class="absolute right-0 top-0 h-full rounded-l-[4px] rounded-r-[2px] bg-gradient-to-l from-purple-600/80 to-purple-400/90 shadow-[0_0_8px_rgba(168,85,247,0.2)] transition-all duration-1000 ease-out group-hover:brightness-125 table-bar-anim" style="width: 0%;" data-target-width="${Math.min((row.total_vidas / data[0].total_vidas)*100, 100)}%"></div>
+                                <span class="relative z-10 text-[11px] drop-shadow-md text-white">${formatNumber(row.total_vidas)}</span>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Trigger animations
+                setTimeout(() => {
+                    document.querySelectorAll('.table-bar-anim').forEach((el, i) => {
+                        setTimeout(() => {
+                            el.style.width = el.getAttribute('data-target-width');
+                        }, i * 20);
+                    });
+                }, 150);
+
+            } catch (err) {
+                console.error('Erro ao carregar saldo de adesões:', err);
+            }
+        }
+
+    </script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
+                            800: '#1e40af', 900: '#1e3a8a', 950: '#172554',
+                        },
+                        wine: {
+                            50: '#fcf4f5', 100: '#fae6e8', 200: '#f3c7cb', 300: '#eaa2a9',
+                            400: '#de727c', 500: '#cd4552', 600: '#b2303c', 700: '#942530',
+                            800: '#7c222a', 900: '#682126', 950: '#380f14',
+                        }
+                    },
+                    animation: {
+                        'spin-slow': 'spin 8s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    
+        // Trigger table bar animations on load
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                document.querySelector('.nav-load').classList.add('loaded');
+                document.body.classList.add('loaded');
+            }, 100);
+
+            const elements = document.querySelectorAll('.reveal');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('active');
+                }, 150 + (index * 100));
+            });
+            
+            // Load Faixa Etária API Data
+            if(typeof window.activeFilters === 'undefined') {
+                window.activeFilters = {}; // stub for filters
+            }
+            loadFaixaEtariaData();
+        });
+
+    
+        // Filter Operadoras
+        async function loadFiltroOperadoras() {
+            try {
+                let tempFilters = { ...activeFilters };
+                tempFilters.operadora = null;
+
+                const params = new URLSearchParams();
+                if (tempFilters.uf) params.append('uf', tempFilters.uf);
+                if (tempFilters.regiao) params.append('regiao', tempFilters.regiao);
+                const qs = params.toString() ? `?${params.toString()}` : '';
+
+                const res = await fetch(`${API_BASE}/api/dashboard/filtros-operadoras${qs}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const dados = await res.json();
+
+                const select = document.getElementById('filtro-operadora');
+                if(!select) return;
+                
+                const currentVal = activeFilters.operadora || "Todos";
+                select.innerHTML = '<option value="Todos" class="bg-[#251e33] text-slate-200">Selecione uma Operadora</option>';
+
+                let found = currentVal === "Todos";
+                dados.forEach(op => {
+                    const opt = document.createElement('option');
+                    opt.value = op;
+                    opt.textContent = op;
+                    opt.className = 'bg-[#251e33] text-slate-200';
+                    select.appendChild(opt);
+                    if (op === currentVal) found = true;
+                });
+
+                if (!found && activeFilters.operadora) {
+                    activeFilters.operadora = null;
+                }
+                select.value = activeFilters.operadora || "Todos";
+            } catch (err) {
+                console.error('Erro ao carregar filtro de operadoras:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('filtro-operadora');
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    activeFilters.operadora = e.target.value === "Todos" ? null : e.target.value;
+                    updateDashboard(true);
+                });
+            }
+        });
+
+        // Load Saldo de Adesões
+        async function loadSaldoAdesoes() {
+            try {
+                const res = await fetch(`${API_BASE}/api/dashboard/saldo-adesoes${getQueryString()}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                const tbody = document.getElementById('tb-saldo-adesoes');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+
+                data.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Golden Highlight for ODONTOGROUP
+                    if (row.is_odontogroup) {
+                        tr.className = "bg-yellow-500/10 hover:bg-yellow-500/20 shadow-[inset_0_0_10px_rgba(234,179,8,0.1)] transition-colors";
+                    }
+
+                    // Icon for Saldo
+                    let saldoHTML = '';
+                    if (row.saldo > 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-green-400 font-bold"><iconify-icon icon="solar:check-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else if (row.saldo < 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-red-400 font-bold"><iconify-icon icon="solar:close-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-slate-400 font-bold"><span>0</span></div>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="text-left pl-4 font-bold ${row.is_odontogroup ? 'text-yellow-400' : 'text-slate-200'}">${row.nome_operadora}</td>
+                        <td class="center">${saldoHTML}</td>
+                        <td class="center text-slate-300">${formatNumber(row.canceladas)}</td>
+                        <td class="center text-slate-300">${formatNumber(row.novas_vidas)}</td>
+                        <td class="center font-extrabold text-white/90">
+                            <div class="flex items-center justify-end pr-2 gap-2 relative w-full h-6 group">
+                                <div class="absolute right-0 top-0 h-full rounded-l-[4px] rounded-r-[2px] bg-gradient-to-l from-purple-600/80 to-purple-400/90 shadow-[0_0_8px_rgba(168,85,247,0.2)] transition-all duration-1000 ease-out group-hover:brightness-125 table-bar-anim" style="width: 0%;" data-target-width="${Math.min((row.total_vidas / data[0].total_vidas)*100, 100)}%"></div>
+                                <span class="relative z-10 text-[11px] drop-shadow-md text-white">${formatNumber(row.total_vidas)}</span>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Trigger animations
+                setTimeout(() => {
+                    document.querySelectorAll('.table-bar-anim').forEach((el, i) => {
+                        setTimeout(() => {
+                            el.style.width = el.getAttribute('data-target-width');
+                        }, i * 20);
+                    });
+                }, 150);
+
+            } catch (err) {
+                console.error('Erro ao carregar saldo de adesões:', err);
+            }
+        }
+
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            /* slate-50 */
+            color: #0f172a;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Active Notch Reverse Corner Radii - Fixed with Radial Gradients */
+        .active-notch::before {
+            content: "";
+            position: absolute;
+            right: 0;
+            bottom: 100%;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at top left, transparent 23.5px, #f8fafc 24px);
+            pointer-events: none;
+        }
+
+        .active-notch::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at bottom left, transparent 23.5px, #f8fafc 24px);
+            pointer-events: none;
+        }
+
+        /* Inactive Item Spotlight Glow (Wine complementary glow from ds.html) */
+        .flashlight-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .flashlight-btn::after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            background: radial-gradient(100px circle at var(--mouse-x, 0) var(--mouse-y, 0),
+                    rgba(148, 37, 48, 0.35),
+                    /* Intensified Wine complementary glow */
+                    transparent 50%);
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            border-radius: inherit;
+            z-index: 0;
+        }
+
+        .flashlight-btn>* {
+            position: relative;
+            z-index: 10;
+        }
+
+        .flashlight-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* Floating Sidebar Ambient Life */
+        @keyframes float-sidebar {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Nav Load Stagger Animation (Sync with ds.html) */
+        .nav-load {
+            opacity: 0;
+            transform: translateX(-40px);
+            filter: blur(4px);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nav-load.loaded {
+            opacity: 1;
+            transform: translateX(0);
+            filter: blur(0);
+        }
+
+        /* Button Entry Stagger (Reveal pattern from ds.html: translateY(2rem)) */
+        .nav-item {
+            opacity: 0;
+            transform: translateY(2rem);
+            transition: all 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .loaded .nav-item {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Pulse slow for active item icon */
+        .pulse-icon {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-slow {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.85;
+                transform: scale(1.05);
+            }
+        }
+
+        /* AIBI Hover Float & Glow */
+        @keyframes aibi-levitate {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+                filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.4));
+            }
+
+            50% {
+                transform: translateY(-4px);
+                filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
+            }
+        }
+
+        .aibi-levitate {
+            animation: aibi-levitate 3.5s ease-in-out infinite;
+        }
+
+        /* AIBI Tooltip Entry (ds.html DNA) */
+        .aibi-tooltip-entry {
+            transform-origin: left center;
+            transform: translateX(-30px);
+            opacity: 0;
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .group:hover .aibi-tooltip-entry {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* Lettering Mask Reveal (ds.html DNA) */
+        .tooltip-text-wrapper {
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+
+        .tooltip-text-content {
+            transform: translateY(110%);
+            opacity: 0;
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s ease;
+            display: block;
+        }
+
+        .group:hover .tooltip-text-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Main Content Reveal Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-100 {
+            transition-delay: 100ms;
+        }
+
+        .delay-200 {
+            transition-delay: 200ms;
+        }
+
+        .delay-300 {
+            transition-delay: 300ms;
+        }
+
+        .delay-400 {
+            transition-delay: 400ms;
+        }
+
+        /* Custom Scrollbar for Dark Cards */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-block: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Custom Tooltip Styling for Top 5 */
+        .map-tooltip-wrapper {
+            position: absolute;
+            bottom: calc(100% + 15px);
+            left: 50%;
+            transform: translateX(-50%) translateY(20px) scale(0.9);
+            background: linear-gradient(135deg, rgba(37, 30, 51, 0.95) 0%, rgba(20, 15, 28, 0.98) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            border-radius: 20px;
+            padding: 20px;
+            width: max-content;
+            min-width: 340px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Bouncy animation */
+            backdrop-filter: blur(12px);
+        }
+
+        .map-bubble-wrapper:hover {
+            z-index: 1000 !important;
+            /* Fix tooltip overlap */
+        }
+
+        .map-bubble-wrapper:hover .map-tooltip-wrapper {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0) scale(1);
+        }
+
+        .map-tooltip-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -10px;
+            border-width: 10px;
+            border-style: solid;
+            border-color: rgba(37, 30, 51, 0.98) transparent transparent transparent;
+        }
+
+        /* Staggered Row Animations in Tooltip */
+        .tooltip-row {
+            opacity: 0;
+            transform: translateX(-15px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(2) {
+            transition-delay: 0.15s;
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(3) {
+            transition-delay: 0.2s;
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(4) {
+            transition-delay: 0.25s;
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(5) {
+            transition-delay: 0.3s;
+        }
+
+        /* Dynamic Tooltip Bar Animations via CSS Variables */
+        .tooltip-bar-fill {
+            width: 0%;
+            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Bouncy width */
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(1) .tooltip-bar-fill {
+            transition-delay: 0.15s;
+            width: var(--bar-width);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(2) .tooltip-bar-fill {
+            transition-delay: 0.20s;
+            width: var(--bar-width);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(3) .tooltip-bar-fill {
+            transition-delay: 0.25s;
+            width: var(--bar-width);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(4) .tooltip-bar-fill {
+            transition-delay: 0.30s;
+            width: var(--bar-width);
+        }
+
+        .map-bubble-wrapper:hover .tooltip-row:nth-child(5) .tooltip-bar-fill {
+            transition-delay: 0.35s;
+            width: var(--bar-width);
+        }
+
+        /* ===== Map Bubble System ===== */
+        .map-bubble-wrapper {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            z-index: 500 !important;
+            cursor: pointer;
+        }
+
+        .map-bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--bubble-bg);
+            box-shadow: 0 0 20px var(--bubble-glow);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-bubble:hover {
+            transform: scale(1.3);
+            z-index: 600;
+        }
+
+        .map-bubble-ping {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        .map-bubble-label {
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            text-align: center;
+        }
+
+        
+        /* Animated Matrix Lines (ds.html style) */
+        .ft-table td {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* The horizontal scanning line */
+        .ft-table td::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -100%;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(37,99,235,1), transparent);
+            animation: scan-line-x 3s linear infinite;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* The vertical scanning line */
+        .ft-table td::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(168, 85, 247, 0.8), transparent);
+            animation: scan-line-y 4s linear infinite;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Hover intensifies the scan */
+        .ft-table tbody tr:hover td::after {
+            background: linear-gradient(90deg, transparent, rgba(148, 37, 48, 1), transparent);
+            height: 2px;
+            opacity: 1;
+            animation: scan-line-x 1.5s linear infinite;
+        }
+        .ft-table tbody tr:hover td::before {
+            background: linear-gradient(180deg, transparent, rgba(148, 37, 48, 1), transparent);
+            width: 2px;
+            opacity: 1;
+            animation: scan-line-y 1.5s linear infinite;
+        }
+
+        @keyframes scan-line-x {
+            0% { left: -100%; }
+            50% { left: 100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes scan-line-y {
+            0% { top: -100%; }
+            50% { top: 100%; }
+            100% { top: 100%; }
+        }
+
+        /* Override Leaflet Background */
+        .leaflet-container {
+            background: transparent !important;
+        }
+    
+        /* Faixa Etária Table Styles */
+        .ft-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .ft-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .ft-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            padding: 10px 12px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            text-align: right;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .ft-table th.center {
+            text-align: center;
+        }
+        
+        .ft-table td {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #e2e8f0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .ft-table th:last-child, .ft-table td:last-child {
+            border-right: none;
+        }
+        
+        .ft-table tbody tr:hover td {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-bottom-color: rgba(148, 37, 48, 0.4);
+            border-right-color: rgba(148, 37, 48, 0.4);
+            box-shadow: inset 0 -1px 10px rgba(148, 37, 48, 0.15);
+        }
+        
+        .ft-table tbody tr td:hover {
+            background-color: rgba(148, 37, 48, 0.15);
+            border-bottom-color: rgba(148, 37, 48, 0.8);
+            border-right-color: rgba(148, 37, 48, 0.8);
+            box-shadow: inset 0 0 15px rgba(148, 37, 48, 0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+        
+        /* Add a drawing animation to the table lines on load */
+        @keyframes draw-lines-x {
+            0% { border-bottom-color: transparent; }
+            50% { border-bottom-color: rgba(148, 37, 48, 0.8); }
+            100% { border-bottom-color: rgba(255,255,255,0.03); }
+        }
+        
+        @keyframes draw-lines-y {
+            0% { border-right-color: transparent; }
+            50% { border-right-color: rgba(148, 37, 48, 0.8); }
+            100% { border-right-color: rgba(255,255,255,0.05); }
+        }
+        
+        .ft-table td {
+            animation: draw-lines-x 2s ease-out forwards, draw-lines-y 2s ease-out forwards;
+        }
+        
+        /* Stagger animation based on row */
+        .ft-table tbody tr:nth-child(1) td { animation-delay: 0.1s; }
+        .ft-table tbody tr:nth-child(2) td { animation-delay: 0.2s; }
+        .ft-table tbody tr:nth-child(3) td { animation-delay: 0.3s; }
+        .ft-table tbody tr:nth-child(4) td { animation-delay: 0.4s; }
+        .ft-table tbody tr:nth-child(5) td { animation-delay: 0.5s; }
+        .ft-table tbody tr:nth-child(6) td { animation-delay: 0.6s; }
+        .ft-table tbody tr:nth-child(7) td { animation-delay: 0.7s; }
+        .ft-table tbody tr:nth-child(8) td { animation-delay: 0.8s; }
+        
+
+        .ft-table tbody tr.total-row td {
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.04);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .ft-table tbody tr td:first-child {
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .table-bar-bg {
+            position: relative;
+            height: 22px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .table-bar-fill-left {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(148, 37, 48, 0.85); /* wine-700 variant */
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+        }
+
+        .table-bar-fill-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            background: rgba(148, 37, 48, 0.85);
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+        }
+
+        .table-bar-text {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 4px;
+        }
+
+    </style>
+</head>
+
+<body class="flex h-screen w-full antialiased selection:bg-brand-600 selection:text-white bg-[#f8fafc]">
+
+    <!-- Floating Sidebar - Glassmorphism & Ambient Life -->
+    <nav
+        class="fixed left-6 top-6 bottom-6 w-28 bg-gradient-to-b from-[#8e86a0] to-[#716982] backdrop-blur-2xl rounded-[36px] flex flex-col items-center py-10 justify-between shadow-[0_25px_60px_rgba(109,100,128,0.4),inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 z-50 nav-load animate-[float-sidebar_8s_ease-in-out_infinite]">
+
+        <!-- Animated Ambient Orbs for Life & Vibe -->
+        <div class="absolute inset-0 w-full h-full pointer-events-none overflow-hidden rounded-[36px] z-0">
+            <div
+                class="absolute top-1/4 -left-6 w-24 h-24 bg-brand-300 rounded-full mix-blend-overlay filter blur-[30px] opacity-70 animate-[pulse-slow_4s_infinite]">
+            </div>
+            <div class="absolute bottom-1/3 -right-6 w-28 h-28 bg-wine-400 rounded-full mix-blend-overlay filter blur-[35px] opacity-60 animate-[pulse-slow_6s_infinite]"
+                style="animation-delay: 1s;"></div>
+        </div>
+
+        <!-- Logo Area - Glowing Background -->
+        <div class="relative w-full flex justify-center shrink-0 z-10 group">
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full filter blur-[25px] opacity-20 group-hover:opacity-40 transition-opacity duration-700">
+            </div>
+            <img src="../Assets/Logo_2-removebg-preview.png" alt="Odontogroup Logo"
+                class="relative w-24 h-24 scale-110 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.2)] cursor-pointer transition-all duration-700 group-hover:scale-[1.15] group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
+        </div>
+
+        <!-- 3 Premium Buttons -->
+        <div class="flex-1 w-full flex flex-col justify-center gap-10 z-10">
+
+            <!-- 1. Home (Inactive) -->
+            <div class="w-full flex justify-center nav-item" style="transition-delay: 200ms;">
+                <a href="index.html" onmousemove="handleMouseMove(event, this)"
+                    class="flashlight-btn w-16 h-16 rounded-[20px] bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all duration-500 hover:bg-white/25 hover:border-white/40 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(148,37,48,0.35)] group">
+                    <iconify-icon
+                        class="text-3xl text-white/80 transition-all duration-500 group-hover:text-white group-hover:scale-110"
+                        icon="solar:home-2-linear"></iconify-icon>
+                </a>
+            </div>
+
+            <!-- 2. Georeferenciamento (Active Cutout / Tab) -->
+            <div class="w-full flex justify-center nav-item" style="transition-delay: 400ms;">
+                <a href="index2.html" onmousemove="handleMouseMove(event, this)"
+                    class="flashlight-btn w-16 h-16 rounded-[20px] bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all duration-500 hover:bg-white/25 hover:border-white/40 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(148,37,48,0.35)] group"
+                    title="Georeferenciamento">
+                    <svg viewBox="0 0 100 100"
+                        class="w-7 h-7 text-white/80 group-hover:text-white fill-none stroke-current transition-all duration-500 group-hover:scale-110"
+                        stroke-width="2">
+                        <path
+                            d="M50 15 C55 15, 62 19, 66 20 C70 21, 74 21, 77 24 C80 27, 84 29, 85 32 C86 35, 83 39, 80 42 C77 45, 76 49, 77 53 C78 57, 76 61, 73 65 C70 69, 65 74, 62 78 C59 82, 56 86, 52 89 C48 92, 44 91, 42 86 C40 81, 37 78, 33 75 C29 72, 24 71, 21 68 C18 65, 19 61, 21 57 C23 53, 23 49, 21 45 C19 41, 16 39, 15 36 C14 33, 16 29, 20 27 C24 25, 28 26, 32 24 C36 22, 40 18, 44 16 C48 14, 49 14, 50 15 Z" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- 3. Contratos / Evolução de Vidas (Document + Handshake Icon) -->
+            <div class="relative w-full flex justify-end nav-item" style="transition-delay: 600ms;">
+                <a href="index3.html"
+                    class="active-notch relative bg-[#f8fafc] w-[82%] rounded-l-[30px] h-16 flex items-center justify-center transition-all duration-500 group hover:w-[86%] shadow-[-5px_0_15px_rgba(248,250,252,0.3)] translate-x-px">
+                    <svg viewBox="0 0 24 24"
+                        class="w-8 h-8 text-[#942530] transition-all duration-500 pulse-icon group-hover:scale-125 group-hover:drop-shadow-[0_0_10px_rgba(148,37,48,0.4)] stroke-current fill-none"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M8 15a1.5 1.5 0 0 1 2.5-1.1L12 15M16 14a1.5 1.5 0 0 0-2.5-1.1L12 14" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- 4. AIBI / Agente de Inteligência (Premium Animated Robot + Tooltip) -->
+            <div class="w-full flex justify-center nav-item" style="transition-delay: 800ms;">
+                <div class="relative group">
+                    <a href="AIBI.html" onmousemove="handleMouseMove(event, this)"
+                        class="relative flashlight-btn w-16 h-16 rounded-[20px] bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-purple-400/30 flex items-center justify-center transition-all duration-500 hover:bg-gradient-to-br hover:from-purple-600/50 hover:to-brand-600/50 hover:border-purple-300/60 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(168,85,247,0.5)] overflow-hidden z-20">
+                        <!-- Fundo Pulsante Exclusivo -->
+                        <div
+                            class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.4)_0%,transparent_60%)] opacity-50 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none scale-150 group-hover:scale-110 animate-[pulse-slow_3s_infinite]">
+                        </div>
+
+                        <!-- SVG Robô Customizado -->
+                        <svg viewBox="0 0 24 24"
+                            class="relative z-10 w-8 h-8 text-purple-200 group-hover:text-white transition-all duration-500 group-hover:scale-110 aibi-levitate"
+                            stroke-width="1.8" stroke="currentColor" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path
+                                d="M7 7h10a2 2 0 0 1 2 2v1l1 1v3l-1 1v3a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-3l-1 -1v-3l1 -1v-1a2 2 0 0 1 2 -2z" />
+                            <path d="M10 16h4" />
+                            <circle cx="8.5" cy="11.5" r=".5" fill="currentColor" />
+                            <circle cx="15.5" cy="11.5" r=".5" fill="currentColor" />
+                            <path d="M9 7l-1 -4" />
+                            <path d="M15 7l1 -4" />
+                        </svg>
+                    </a>
+
+                    <!-- Premium Custom Tooltip (Elastic Entry & Glassmorphism) -->
+                    <div class="absolute left-full top-1/2 -translate-y-1/2 ml-5 w-[280px] aibi-tooltip-entry z-50">
+                        <div
+                            class="relative bg-[#1e1528]/90 backdrop-blur-2xl border border-purple-500/40 p-5 rounded-[20px] shadow-[0_20px_50px_rgba(168,85,247,0.3)] overflow-hidden group-hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-shadow duration-700">
+
+                            <!-- Glowing Orbs inside Tooltip -->
+                            <div
+                                class="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/40 rounded-full blur-[25px] animate-[pulse-slow_4s_infinite]">
+                            </div>
+                            <div
+                                class="absolute -bottom-10 -left-10 w-20 h-20 bg-brand-500/30 rounded-full blur-[20px] animate-[pulse-slow_5s_infinite]">
+                            </div>
+
+                            <!-- Seta do Tooltip -->
+                            <div
+                                class="absolute top-1/2 -left-[6px] -translate-y-1/2 w-3 h-3 bg-[#1e1528] border-l border-t border-purple-500/40 rotate-[-45deg] rounded-[2px] z-10">
+                            </div>
+
+                            <!-- Conteúdo -->
+                            <div class="relative z-20">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div
+                                        class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500/30 to-brand-500/30 flex items-center justify-center border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                                        <svg viewBox="0 0 24 24" class="w-4 h-4 text-purple-200 animate-pulse"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path
+                                                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                                        </svg>
+                                    </div>
+                                    <h4
+                                        class="text-[14px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-brand-300 tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                        <span class="tooltip-text-wrapper"><span
+                                                class="tooltip-text-content delay-100">AIBI Assistant</span></span>
+                                    </h4>
+                                </div>
+                                <p class="text-[12px] text-slate-300 leading-relaxed font-medium">
+                                    <span class="tooltip-text-wrapper"><span class="tooltip-text-content delay-200">Seu
+                                            agente de <span
+                                                class="text-white font-bold bg-purple-500/20 px-1 rounded">Inteligência
+                                                Competitiva</span>.</span></span><br />
+                                    <span class="tooltip-text-wrapper"><span
+                                            class="tooltip-text-content delay-300">Converse e cruze dados de
+                                            mercado</span></span>
+                                    <span class="tooltip-text-wrapper"><span class="tooltip-text-content delay-400">em
+                                            segundos com o poder da IA.</span></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Balanced spacing at bottom mirroring the top logo -->
+        <div class="h-20 shrink-0 z-10"></div>
+
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full pl-[160px] pr-12 pt-12 pb-12 overflow-y-auto bg-transparent relative z-0">
+
+        <!-- Header Section -->
+        <header class="mb-12 reveal">
+            <div class="flex items-end gap-3 mb-2">
+                <h1 class="text-[40px] font-light text-slate-800 tracking-tight leading-none">
+                    MARKETPLACE <span
+                        class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#2563eb] to-[#b2303c]">ODONTOGROUP</span>
+                </h1>
+            </div>
+            <h2 class="text-xl font-light italic text-slate-500 tracking-wide mt-3">Comparação de Faixa Etária
+            </h2>
+            <div class="h-[1px] w-full bg-gradient-to-r from-slate-300 via-slate-200 to-transparent mt-6 rounded-full">
+            </div>
+        </header>
+        
+        
+        <!-- Main Dashboard Grid (Faixa Etária) -->
+        <div class="grid grid-cols-1 gap-6 w-full reveal delay-100">
+
+            <!-- Faixa Etária Card -->
+            <div
+                class="group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(148,37,48,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full reveal delay-100">
+
+                <div class="absolute inset-0 rounded-[24px] z-0 pointer-events-none">
+                    <div
+                        class="absolute -top-12 -right-12 w-48 h-48 bg-[radial-gradient(circle,rgba(148,37,48,0.15)_0%,transparent_70%)] group-hover:scale-125 transition-transform duration-700">
+                    </div>
+                </div>
+
+                <!-- Watermark Icon -->
+                <iconify-icon icon="solar:users-group-rounded-bold-duotone"
+                    class="absolute -top-2 -right-2 text-[80px] text-wine-300/5 group-hover:text-wine-300/10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 ease-out z-0"></iconify-icon>
+
+                <!-- Card Header -->
+                <div class="px-7 pt-7 pb-5 flex items-center justify-center border-b border-white/5 relative z-10 w-full">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-12 h-12 rounded-[16px] bg-gradient-to-br from-wine-500/20 to-wine-600/10 border border-wine-400/20 flex items-center justify-center shrink-0">
+                            <iconify-icon icon="solar:users-group-rounded-bold-duotone"
+                                class="text-[26px] text-wine-300"></iconify-icon>
+                        </div>
+                        <div>
+                            <h3 class="text-[16px] font-extrabold text-white tracking-widest uppercase">COMPARAÇÃO POR FAIXA ETÁRIA
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Content -->
+                <div class="relative z-10 p-2 overflow-hidden w-full">
+                    <div class="ft-table-wrapper custom-scrollbar">
+                        <table class="ft-table">
+                            <thead>
+                                <tr>
+                                    <th class="center" style="width: 15%;">Gênero</th>
+                                    <th class="center" colspan="2" style="width: 28.33%;">F</th>
+                                    <th class="center" colspan="2" style="width: 28.33%;">M</th>
+                                    <th class="center" colspan="2" style="width: 28.33%;">Total</th>
+                                </tr>
+                                <tr>
+                                    <th class="center">Faixa</th>
+                                    <th>Total Vidas</th>
+                                    <th>%TxCobertura</th>
+                                    <th>Total Vidas</th>
+                                    <th>%TxCobertura</th>
+                                    <th>Total Vidas</th>
+                                    <th>%TxCobertura</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb-faixa-etaria">
+                                <!-- Data loaded dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Bottom KPIs Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-6 w-full reveal delay-200 mt-6">
+            
+            <!-- Selecionar Operadora -->
+            <div class="group relative self-start h-auto w-full bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(234,179,8,0.2)] transition-all duration-500 flex flex-col pt-5 px-6 pb-6 justify-start overflow-hidden">
+                <div class="absolute inset-0 rounded-[24px] z-0 pointer-events-none">
+                    <div class="absolute -top-8 -right-8 w-40 h-40 bg-[radial-gradient(circle,rgba(234,179,8,0.15)_0%,transparent_70%)] group-hover:scale-125 transition-transform duration-700">
+                    </div>
+                </div>
+
+                <!-- Watermark Icon -->
+                <iconify-icon icon="solar:buildings-bold-duotone"
+                    class="absolute -top-4 -right-4 text-[80px] text-yellow-300/5 group-hover:text-yellow-300/10 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-700 ease-out z-0"></iconify-icon>
+
+                <!-- Header -->
+                <div class="relative z-10 flex items-center gap-3 mb-5 shrink-0">
+                    <div class="w-9 h-9 rounded-[12px] bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-400/20 flex items-center justify-center shrink-0 group-hover:bg-yellow-500/30 transition-colors duration-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                        <iconify-icon icon="solar:buildings-bold-duotone" class="text-[18px] text-yellow-300 group-hover:scale-110 transition-transform duration-500"></iconify-icon>
+                    </div>
+                    <h3 class="text-[12px] font-semibold text-white tracking-wide uppercase">Selecionar Operadora</h3>
+                </div>
+
+                <div class="relative group/select z-10">
+                    <select id="filtro-operadora" class="w-full appearance-none bg-white/5 border border-white/20 hover:border-yellow-400/50 rounded-[12px] text-slate-100 text-[14px] px-4 py-3 outline-none focus:border-yellow-400 focus:bg-white/10 transition-all cursor-pointer shadow-inner shadow-black/20">
+                        <option value="Todos" class="bg-[#251e33]">Todos</option>
+                    </select>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover/select:text-yellow-300 transition-colors duration-300">
+                        <iconify-icon icon="solar:alt-arrow-down-bold" class="text-lg"></iconify-icon>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saldo de Adesões -->
+            <div class="group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(168,85,247,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full min-h-[300px]">
+                <div class="absolute inset-0 rounded-[24px] z-0 pointer-events-none">
+                    <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-[radial-gradient(circle,rgba(168,85,247,0.15)_0%,transparent_70%)] group-hover:scale-125 transition-transform duration-700"></div>
+                </div>
+
+                <iconify-icon icon="solar:document-add-bold-duotone" class="absolute -top-2 -right-2 text-[80px] text-purple-300/5 group-hover:text-purple-300/10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 ease-out z-0"></iconify-icon>
+
+                <div class="px-7 pt-6 pb-4 flex items-center justify-center border-b border-white/5 relative z-10 w-full">
+                    <div class="flex items-center gap-4">
+                        <div class="w-11 h-11 rounded-[14px] bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-400/20 flex items-center justify-center shrink-0">
+                            <iconify-icon icon="solar:document-add-bold-duotone" class="text-[24px] text-purple-300"></iconify-icon>
+                        </div>
+                        <div>
+                            <h3 class="text-[14px] font-extrabold text-white tracking-widest uppercase">SALDO DE ADESÕES</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 flex-1 overflow-hidden w-full flex flex-col px-2 pb-2 pt-2">
+                    <div class="ft-table-wrapper custom-scrollbar max-h-[350px] overflow-y-auto">
+                        <table class="ft-table w-full">
+                            <thead>
+                                <tr>
+                                    <th class="text-left pl-4" style="width: 40%; text-align: left;">Grupo</th>
+                                    <th class="center" style="width: 15%;">Saldo</th>
+                                    <th class="center" style="width: 15%;">Canceladas</th>
+                                    <th class="center" style="width: 15%;">Novas Vidas</th>
+                                    <th class="center" style="width: 15%;">Total Vidas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb-saldo-adesoes">
+                                <!-- Data loaded dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+    </main>
+
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        window.activeFilters = {
+            uf: null,
+            operadora: null,
+            regiao: null,
+            municipio: null,
+            faixa_etaria: null,
+            sexo: null
+        };
+
+        function getQueryString() {
+            const params = new URLSearchParams();
+            if (activeFilters.uf) params.append('uf', activeFilters.uf);
+            if (activeFilters.operadora) params.append('operadora', activeFilters.operadora);
+            if (activeFilters.regiao) params.append('regiao', activeFilters.regiao);
+            if (activeFilters.municipio) params.append('municipio', activeFilters.municipio);
+            if (activeFilters.faixa_etaria) params.append('faixa_etaria', activeFilters.faixa_etaria);
+            if (activeFilters.sexo) params.append('sexo', activeFilters.sexo);
+            return params.toString() ? `?${params.toString()}` : '';
+        }
+
+        function updateDashboard(preserveFilters = false) {
+            loadFaixaEtariaData();
+            loadFiltroOperadoras();
+            loadSaldoAdesoes();
+            updateClearButton();
+        }
+
+        function clearFilters() {
+            activeFilters = { uf: null, operadora: null, regiao: null, municipio: null, faixa_etaria: null, sexo: null };
+            updateDashboard();
+        }
+
+        function updateClearButton() {
+            let btn = document.getElementById('btn-limpar-filtros');
+            const hasFilters = activeFilters.uf || (activeFilters.operadora && activeFilters.operadora !== "Todos") || activeFilters.regiao || activeFilters.municipio || activeFilters.faixa_etaria || activeFilters.sexo;
+
+            if (hasFilters) {
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.id = 'btn-limpar-filtros';
+                    btn.className = 'absolute top-4 right-4 bg-wine-600 hover:bg-wine-500 text-white text-xs px-3 py-1.5 rounded-full shadow-lg transition-all z-50 flex items-center gap-1';
+                    btn.innerHTML = '<iconify-icon icon="solar:close-circle-bold"></iconify-icon> Limpar Filtros';
+                    btn.onclick = clearFilters;
+                    document.body.appendChild(btn);
+                }
+                btn.style.opacity = '1';
+            } else {
+                if (btn) btn.style.opacity = '0';
+            }
+        }
+
+        // Trigger animations when DOM is loaded
+        document.addEventListener("DOMContentLoaded", () => {
+
+            setTimeout(() => {
+                document.querySelector('.nav-load').classList.add('loaded');
+                document.body.classList.add('loaded');
+            }, 100);
+
+            const elements = document.querySelectorAll('.reveal');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('active');
+                }, 150 + (index * 100));
+            });
+            
+            // Initial Load
+            if(typeof window.activeFilters === 'undefined') {
+                window.activeFilters = {}; // stub for filters
+            }
+            updateDashboard();
+        });
+
+        
+        // Fetch Faixa Etaria Data
+        async function loadFaixaEtariaData() {
+            const tbody = document.getElementById('tb-faixa-etaria');
+            if (!tbody) return;
+            
+            // Show loading state
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400"><iconify-icon icon="line-md:loading-twotone-loop" class="text-2xl mr-2 align-middle"></iconify-icon> Carregando dados...</td></tr>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard/faixa-etaria${getQueryString()}`);
+                const data = await response.json();
+                
+                if (data && data.data && data.data.length > 0) {
+                    renderFaixaEtariaTable(data.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">Nenhum dado encontrado para os filtros selecionados.</td></tr>';
+                }
+            } catch (error) {
+                console.error("Error loading faixa etaria:", error);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-400">Erro ao carregar dados da API.</td></tr>';
+            }
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('pt-BR').format(Math.round(num));
+        }
+
+        function renderFaixaEtariaTable(data) {
+            const tbody = document.getElementById('tb-faixa-etaria');
+            tbody.innerHTML = '';
+            
+            // Find max values for bars relative sizing
+            let maxF = 0;
+            let maxM = 0;
+            data.forEach(row => {
+                if(row.F_vidas > maxF) maxF = row.F_vidas;
+                if(row.M_vidas > maxM) maxM = row.M_vidas;
+            });
+            const maxVal = Math.max(maxF, maxM);
+            
+            let totalFVidas = 0;
+            let totalMVidas = 0;
+            let totalGeralVidas = 0;
+            let totalFPop = data.length > 0 && data[0].F_pop ? data[0].F_pop : 0;
+            let totalMPop = data.length > 0 && data[0].M_pop ? data[0].M_pop : 0;
+
+            data.forEach((row, index) => {
+                totalFVidas += row.F_vidas;
+                totalMVidas += row.M_vidas;
+                totalGeralVidas += row.Total_vidas;
+                
+                const pctF = maxVal > 0 ? (row.F_vidas / maxVal) * 100 : 0;
+                const pctM = maxVal > 0 ? (row.M_vidas / maxVal) * 100 : 0;
+                
+                let f_vidas_html = `${formatNumber(row.F_vidas)}`;
+                let m_vidas_html = `${formatNumber(row.M_vidas)}`;
+                let t_vidas_html = `${formatNumber(row.Total_vidas)}`;
+                
+                let f_comp_html = '';
+                let m_comp_html = '';
+                let t_comp_html = '';
+                
+                if (window.activeFilters && window.activeFilters.operadora && window.activeFilters.operadora.toLowerCase() !== "todos") {
+                    const buildComp = (val, odontoVal) => {
+                        const diff = val - (odontoVal || 0);
+                        if (diff === 0 && !odontoVal) return ''; // ignore if no baseline
+                        const isPos = diff >= 0;
+                        const colorClass = isPos ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                        return `
+                        <div class="mt-1 flex justify-end w-full">
+                            <div class="px-1 py-0.5 rounded border text-[8px] font-bold flex items-center gap-1 ${colorClass}">
+                                <iconify-icon icon="${isPos ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold'}"></iconify-icon> 
+                                ${formatNumber(Math.abs(diff))} vidas ${isPos ? 'a mais' : 'a menos'}
+                            </div>
+                        </div>`;
+                    };
+                    f_comp_html = buildComp(row.F_vidas, row.odontogroup_F_vidas);
+                    m_comp_html = buildComp(row.M_vidas, row.odontogroup_M_vidas);
+                    t_comp_html = buildComp(row.Total_vidas, row.odontogroup_Total_vidas);
+                }
+
+                // Determine if this row/cell is active
+                const isFaixaActive = window.activeFilters && window.activeFilters.faixa_etaria === row.faixa;
+                const activeSexo = window.activeFilters ? window.activeFilters.sexo : null;
+                const isFActive = isFaixaActive && (!activeSexo || activeSexo === 'F');
+                const isMActive = isFaixaActive && (!activeSexo || activeSexo === 'M');
+                const hasAnyFilter = window.activeFilters && (window.activeFilters.faixa_etaria || window.activeFilters.sexo);
+                
+                const tr = document.createElement('tr');
+                tr.className = "group/row transition-all duration-300";
+                
+                // Helper to build cell classes based on active state
+                const getCellClass = (isActive) => {
+                    if (!hasAnyFilter) return "cursor-pointer hover:bg-white/10";
+                    if (isActive) return "cursor-pointer bg-white/10 border-purple-400 font-bold";
+                    return "cursor-pointer opacity-30 hover:opacity-100 hover:bg-white/5";
+                };
+
+                tr.innerHTML = `
+                    <td class="${getCellClass(isFaixaActive && !activeSexo)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', null)">${row.faixa}</td>
+                    <td class="${getCellClass(isFActive)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', 'F')">
+                        <div class="table-bar-bg flex flex-col justify-center items-start">
+                            <div class="table-bar-fill-right" style="width: 0%;" data-target-width="${pctF}%"></div>
+                            <span class="table-bar-text relative z-10 leading-tight pt-0.5 pb-0.5">${f_vidas_html}</span>
+                        </div>
+                        ${f_comp_html}
+                    </td>
+                    <td class="${getCellClass(isFActive)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', 'F')">${row.F_cobertura.toFixed(2).replace('.', ',')}%</td>
+                    <td class="${getCellClass(isMActive)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', 'M')">
+                        <div class="table-bar-bg flex flex-col justify-center items-start">
+                            <div class="table-bar-fill-left" style="width: 0%;" data-target-width="${pctM}%"></div>
+                            <span class="table-bar-text relative z-10 leading-tight pt-0.5 pb-0.5">${m_vidas_html}</span>
+                        </div>
+                        ${m_comp_html}
+                    </td>
+                    <td class="${getCellClass(isMActive)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', 'M')">${row.M_cobertura.toFixed(2).replace('.', ',')}%</td>
+                    <td class="${getCellClass(isFaixaActive && !activeSexo)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', null)">
+                        ${t_vidas_html}
+                        ${t_comp_html}
+                    </td>
+                    <td class="${getCellClass(isFaixaActive && !activeSexo)} transition-all duration-300" onclick="toggleFaixaFilter('${row.faixa}', null)">${row.Total_cobertura.toFixed(2).replace('.', ',')}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Add Total row
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            
+            const totalPop = data.length > 0 && data[0].F_pop ? data[0].F_pop : 0;
+            const pctTotalF = totalPop > 0 ? (totalFVidas / totalPop) * 100 : 0;
+            const pctTotalM = totalPop > 0 ? (totalMVidas / totalPop) * 100 : 0;
+            const pctTotalGeral = totalPop > 0 ? (totalGeralVidas / totalPop) * 100 : 0;
+            
+            let totalF_comp_html = '';
+            let totalM_comp_html = '';
+            let totalGeral_comp_html = '';
+            
+            if (window.activeFilters && window.activeFilters.operadora && window.activeFilters.operadora.toLowerCase() !== "todos") {
+                let odontoF = data.reduce((acc, row) => acc + (row.odontogroup_F_vidas || 0), 0);
+                let odontoM = data.reduce((acc, row) => acc + (row.odontogroup_M_vidas || 0), 0);
+                let odontoTotal = data.reduce((acc, row) => acc + (row.odontogroup_Total_vidas || 0), 0);
+                
+                const buildCompTotal = (val, odontoVal) => {
+                    const diff = val - odontoVal;
+                    if (diff === 0 && !odontoVal) return ''; // ignore if no baseline
+                    const isPos = diff >= 0;
+                    const colorClass = isPos ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                    return `
+                    <div class="mt-1 flex justify-end w-full">
+                        <div class="px-1 py-0.5 rounded border text-[8px] font-bold flex items-center gap-1 ${colorClass}">
+                            <iconify-icon icon="${isPos ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold'}"></iconify-icon>
+                            ${formatNumber(Math.abs(diff))} vidas ${isPos ? 'a mais' : 'a menos'}
+                        </div>
+                    </div>`;
+                };
+                
+                totalF_comp_html = buildCompTotal(totalFVidas, odontoF);
+                totalM_comp_html = buildCompTotal(totalMVidas, odontoM);
+                totalGeral_comp_html = buildCompTotal(totalGeralVidas, odontoTotal);
+            }
+            
+            totalRow.className = 'total-row group/row relative';
+            totalRow.innerHTML = `
+                <td>Total</td>
+                <td class="leading-tight pt-1 pb-1 relative">
+                    ${formatNumber(totalFVidas)}
+                    ${totalF_comp_html}
+                </td>
+                <td>${pctTotalF.toFixed(2).replace('.', ',')}%</td>
+                <td class="leading-tight pt-1 pb-1 relative">
+                    ${formatNumber(totalMVidas)}
+                    ${totalM_comp_html}
+                </td>
+                <td>${pctTotalM.toFixed(2).replace('.', ',')}%</td>
+                <td class="leading-tight pt-1 pb-1 relative">
+                    ${formatNumber(totalGeralVidas)}
+                    ${totalGeral_comp_html}
+                </td>
+                <td class="text-brand-300 font-extrabold">${pctTotalGeral.toFixed(2).replace('.', ',')}%</td>
+            `;
+            tbody.appendChild(totalRow);
+            
+            // Trigger Animations
+            setTimeout(() => {
+                const barsLeft = document.querySelectorAll('.table-bar-fill-left');
+                const barsRight = document.querySelectorAll('.table-bar-fill-right');
+                
+                barsLeft.forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-target-width');
+                });
+                barsRight.forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-target-width');
+                });
+            }, 100);
+        }
+
+
+        function handleMouseMove(e, element) {
+            const rect = element.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            element.style.setProperty("--mouse-x", `${x}px`);
+            element.style.setProperty("--mouse-y", `${y}px`);
+        }
+
+        window.toggleFaixaFilter = function(faixa, sexo) {
+            if (window.activeFilters.faixa_etaria === faixa && window.activeFilters.sexo === sexo) {
+                // Toggle off if clicking the exact same filter
+                window.activeFilters.faixa_etaria = null;
+                window.activeFilters.sexo = null;
+            } else {
+                window.activeFilters.faixa_etaria = faixa;
+                window.activeFilters.sexo = sexo;
+            }
+            updateDashboard(true);
+        };
+    
+        // Trigger table bar animations on load
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                document.querySelector('.nav-load').classList.add('loaded');
+                document.body.classList.add('loaded');
+            }, 100);
+
+            const elements = document.querySelectorAll('.reveal');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('active');
+                }, 150 + (index * 100));
+            });
+            
+            // Load Faixa Etária API Data
+            if(typeof window.activeFilters === 'undefined') {
+                window.activeFilters = {}; // stub for filters
+            }
+            loadFaixaEtariaData();
+        });
+
+    
+        // Filter Operadoras
+        async function loadFiltroOperadoras() {
+            try {
+                let tempFilters = { ...activeFilters };
+                tempFilters.operadora = null;
+
+                const params = new URLSearchParams();
+                if (tempFilters.uf) params.append('uf', tempFilters.uf);
+                if (tempFilters.regiao) params.append('regiao', tempFilters.regiao);
+                const qs = params.toString() ? `?${params.toString()}` : '';
+
+                const res = await fetch(`${API_BASE}/api/dashboard/filtros-operadoras${qs}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const dados = await res.json();
+
+                const select = document.getElementById('filtro-operadora');
+                if(!select) return;
+                
+                const currentVal = activeFilters.operadora || "Todos";
+                select.innerHTML = '<option value="Todos" class="bg-[#251e33] text-slate-200">Selecione uma Operadora</option>';
+
+                let found = currentVal === "Todos";
+                dados.forEach(op => {
+                    const opt = document.createElement('option');
+                    opt.value = op;
+                    opt.textContent = op;
+                    opt.className = 'bg-[#251e33] text-slate-200';
+                    select.appendChild(opt);
+                    if (op === currentVal) found = true;
+                });
+
+                if (!found && activeFilters.operadora) {
+                    activeFilters.operadora = null;
+                }
+                select.value = activeFilters.operadora || "Todos";
+            } catch (err) {
+                console.error('Erro ao carregar filtro de operadoras:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const select = document.getElementById('filtro-operadora');
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    activeFilters.operadora = e.target.value === "Todos" ? null : e.target.value;
+                    updateDashboard(true);
+                });
+            }
+        });
+
+        // Load Saldo de Adesões
+        async function loadSaldoAdesoes() {
+            try {
+                const res = await fetch(`${API_BASE}/api/dashboard/saldo-adesoes${getQueryString()}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                const tbody = document.getElementById('tb-saldo-adesoes');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+
+                data.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Base classes for interactivity
+                    tr.className = "cursor-pointer transition-all duration-300 hover:bg-white/5";
+                    
+                    // Golden Highlight for ODONTOGROUP
+                    if (row.is_odontogroup) {
+                        tr.className += " bg-yellow-500/10 hover:bg-yellow-500/20 shadow-[inset_0_0_10px_rgba(234,179,8,0.1)]";
+                    }
+                    
+                    // Handle active filter dimming/highlighting
+                    const isFiltered = window.activeFilters && window.activeFilters.operadora === row.nome_operadora;
+                    if (window.activeFilters && window.activeFilters.operadora && !isFiltered) {
+                        tr.classList.add('opacity-40');
+                    }
+                    if (isFiltered) {
+                        tr.classList.add('bg-white/10', 'border-l-2', 'border-purple-400');
+                    }
+
+                    tr.addEventListener('click', () => {
+                        if (window.activeFilters.operadora === row.nome_operadora) {
+                            window.activeFilters.operadora = null; // Toggle off
+                        } else {
+                            window.activeFilters.operadora = row.nome_operadora;
+                        }
+                        updateDashboard(true);
+                    });
+
+                    // Icon for Saldo
+                    let saldoHTML = '';
+                    if (row.saldo > 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-green-400 font-bold"><iconify-icon icon="solar:check-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else if (row.saldo < 0) {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-red-400 font-bold"><iconify-icon icon="solar:close-circle-bold" class="text-lg"></iconify-icon> <span>${formatNumber(row.saldo)}</span></div>`;
+                    } else {
+                        saldoHTML = `<div class="flex justify-center items-center gap-1.5 text-slate-400 font-bold"><span>0</span></div>`;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="text-left pl-4 font-bold ${row.is_odontogroup ? 'text-yellow-400' : 'text-slate-200'}">${row.nome_operadora}</td>
+                        <td class="center">${saldoHTML}</td>
+                        <td class="center text-slate-300">${formatNumber(row.canceladas)}</td>
+                        <td class="center text-slate-300">${formatNumber(row.novas_vidas)}</td>
+                        <td class="center font-extrabold text-white/90">
+                            <div class="flex items-center justify-end pr-2 gap-2 relative w-full h-6 group">
+                                <div class="absolute right-0 top-0 h-full rounded-l-[4px] rounded-r-[2px] bg-gradient-to-l from-purple-600/80 to-purple-400/90 shadow-[0_0_8px_rgba(168,85,247,0.2)] transition-all duration-1000 ease-out group-hover:brightness-125 table-bar-anim" style="width: 0%;" data-target-width="${Math.min((row.total_vidas / data[0].total_vidas)*100, 100)}%"></div>
+                                <span class="relative z-10 text-[11px] drop-shadow-md text-white">${formatNumber(row.total_vidas)}</span>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Trigger animations
+                setTimeout(() => {
+                    document.querySelectorAll('.table-bar-anim').forEach((el, i) => {
+                        setTimeout(() => {
+                            el.style.width = el.getAttribute('data-target-width');
+                        }, i * 20);
+                    });
+                }, 150);
+
+            } catch (err) {
+                console.error('Erro ao carregar saldo de adesões:', err);
+            }
+        }
+
+    </script>
+</body>
+</html>
