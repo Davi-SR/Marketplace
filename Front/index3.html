@@ -756,6 +756,84 @@
             border-collapse: separate;
             border-spacing: 0;
         }
+
+        .kpi-scroll-card {
+            max-height: min(720px, calc(100vh - 170px));
+            min-height: 320px;
+        }
+
+        .kpi-table-shell {
+            min-height: 0;
+        }
+
+        .kpi-table-scroll {
+            max-height: min(540px, 58vh);
+            overflow-x: scroll !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x pan-y;
+            cursor: grab;
+            padding-bottom: 12px;
+            scrollbar-gutter: stable both-edges;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(168, 85, 247, 0.85) rgba(255, 255, 255, 0.08);
+        }
+
+        .kpi-table-scroll.is-dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+
+        .kpi-table-scroll::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .kpi-table-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+        }
+
+        .kpi-table-scroll::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.95), rgba(178, 48, 60, 0.95));
+            border-radius: 999px;
+            border: 2px solid rgba(37, 30, 51, 0.95);
+        }
+
+        .kpi-table-shell::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            bottom: 18px;
+            width: 34px;
+            pointer-events: none;
+            border-radius: 0 18px 18px 0;
+            background: linear-gradient(90deg, transparent, rgba(37, 30, 51, 0.72));
+            z-index: 35;
+        }
+
+        .kpi-table-scroll .ft-table {
+            width: max-content;
+            min-width: 960px;
+        }
+
+        .saldo-table-scroll {
+            max-height: min(540px, 60vh) !important;
+        }
+
+        .saldo-table-scroll .ft-table {
+            min-width: 1080px;
+        }
+
+        .kpi-table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(37, 30, 51, 0.96);
+            backdrop-filter: blur(12px);
+        }
         
         .ft-table th {
             font-size: 11px;
@@ -887,6 +965,214 @@
             padding: 0 4px;
         }
 
+    </style>
+
+    <style>
+        /* Responsive layout overrides */
+        * {
+            min-width: 0;
+        }
+
+        @media (min-width: 901px) and (max-width: 1180px) {
+            body > nav {
+                left: 16px !important;
+                top: 16px !important;
+                bottom: 16px !important;
+                width: 96px !important;
+            }
+
+            body > main {
+                padding-left: 136px !important;
+                padding-right: 24px !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            html,
+            body {
+                height: auto !important;
+                min-height: 100%;
+                overflow-x: hidden;
+            }
+
+            body {
+                display: block !important;
+                padding-bottom: 96px;
+            }
+
+            body > nav {
+                left: 0 !important;
+                right: 0 !important;
+                top: auto !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 78px !important;
+                border-radius: 24px 24px 0 0 !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 10px !important;
+                padding: 8px 12px !important;
+                animation: none !important;
+            }
+
+            body > nav > div:first-child,
+            body > nav > div:nth-child(2),
+            body > nav > div:last-child,
+            .aibi-tooltip-entry {
+                display: none !important;
+            }
+
+            body > nav > div:nth-child(3) {
+                flex: 0 1 auto !important;
+                width: auto !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+            }
+
+            body > nav .nav-item {
+                width: auto !important;
+                justify-content: center !important;
+            }
+
+            body > nav a,
+            body > nav .active-notch {
+                width: 54px !important;
+                height: 54px !important;
+                border-radius: 18px !important;
+                transform: none !important;
+            }
+
+            body > nav a:hover,
+            body > nav .active-notch:hover {
+                width: 54px !important;
+                transform: none !important;
+            }
+
+            .active-notch::before,
+            .active-notch::after {
+                display: none !important;
+            }
+
+            body > main {
+                height: auto !important;
+                min-height: 100vh;
+                padding: 24px 16px 108px !important;
+                overflow: visible !important;
+            }
+
+            body > main header {
+                margin-bottom: 24px !important;
+            }
+
+            body > main header h1 {
+                font-size: clamp(1.7rem, 8vw, 2.4rem) !important;
+                line-height: 1.05 !important;
+                overflow-wrap: anywhere;
+            }
+
+            body > main header h2 {
+                font-size: 1rem !important;
+                line-height: 1.4 !important;
+            }
+
+            body > main h3 {
+                overflow-wrap: anywhere;
+            }
+
+            body > main .grid {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            [class*="h-[calc"] {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            [class*="h-[700px]"],
+            [class*="h-[300px]"] {
+                height: auto !important;
+                min-height: 320px !important;
+            }
+
+            #mapa-uf {
+                height: 55vh !important;
+                min-height: 340px !important;
+            }
+
+            .ft-table-wrapper {
+                overflow-x: scroll !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x pan-y;
+            }
+
+            .ft-table {
+                width: max-content;
+                min-width: 960px;
+            }
+
+            .kpi-scroll-card {
+                max-height: min(620px, 72vh) !important;
+            }
+
+            .kpi-table-scroll {
+                max-height: min(460px, 56vh) !important;
+            }
+
+            .saldo-table-scroll .ft-table {
+                min-width: 1080px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding-bottom: 88px;
+            }
+
+            body > nav {
+                height: 70px !important;
+                padding: 8px !important;
+                gap: 6px !important;
+            }
+
+            body > nav > div:nth-child(3) {
+                gap: 6px !important;
+            }
+
+            body > nav a,
+            body > nav .active-notch,
+            body > nav a:hover,
+            body > nav .active-notch:hover {
+                width: 46px !important;
+                height: 46px !important;
+                border-radius: 16px !important;
+            }
+
+            body > nav svg,
+            body > nav iconify-icon {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 24px !important;
+            }
+
+            body > main {
+                padding: 18px 12px 96px !important;
+            }
+
+            [class*="h-[700px]"],
+            [class*="h-[300px]"] {
+                min-height: 280px !important;
+            }
+
+            #mapa-uf {
+                min-height: 300px !important;
+            }
+        }
     </style>
 </head>
 
@@ -1064,7 +1350,7 @@
 
             <!-- Faixa Etária Card -->
             <div
-                class="group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(148,37,48,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full reveal delay-100">
+                class="kpi-scroll-card group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(148,37,48,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full reveal delay-100">
 
                 <div class="absolute inset-0 rounded-[24px] z-0 pointer-events-none">
                     <div
@@ -1092,8 +1378,8 @@
                 </div>
 
                 <!-- Table Content -->
-                <div class="relative z-10 p-2 overflow-hidden w-full">
-                    <div class="ft-table-wrapper custom-scrollbar">
+                <div class="kpi-table-shell relative z-10 p-2 overflow-hidden w-full flex-1">
+                    <div class="ft-table-wrapper kpi-table-scroll custom-scrollbar">
                         <table class="ft-table">
                             <thead>
                                 <tr>
@@ -1155,7 +1441,7 @@
             </div>
 
             <!-- Saldo de Adesões -->
-            <div class="group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(168,85,247,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full min-h-[300px]">
+            <div class="kpi-scroll-card group relative bg-gradient-to-br from-[#3a314f] to-[#251e33] rounded-[24px] border border-white/10 shadow-[0_10px_25px_rgba(58,49,79,0.15)] hover:shadow-[0_20px_40px_rgba(168,85,247,0.2)] transition-all duration-500 flex flex-col shrink-0 overflow-hidden w-full min-h-[300px]">
                 <div class="absolute inset-0 rounded-[24px] z-0 pointer-events-none">
                     <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-[radial-gradient(circle,rgba(168,85,247,0.15)_0%,transparent_70%)] group-hover:scale-125 transition-transform duration-700"></div>
                 </div>
@@ -1173,8 +1459,8 @@
                     </div>
                 </div>
 
-                <div class="relative z-10 flex-1 overflow-hidden w-full flex flex-col px-2 pb-2 pt-2">
-                    <div class="ft-table-wrapper custom-scrollbar max-h-[350px] overflow-y-auto">
+                <div class="kpi-table-shell relative z-10 flex-1 overflow-hidden w-full flex flex-col px-2 pb-2 pt-2">
+                    <div class="ft-table-wrapper kpi-table-scroll saldo-table-scroll custom-scrollbar">
                         <table class="ft-table w-full">
                             <thead>
                                 <tr>
@@ -1642,6 +1928,74 @@
                 console.error('Erro ao carregar saldo de adesões:', err);
             }
         }
+
+        function enableKpiTableDragScroll() {
+            document.querySelectorAll('.kpi-table-scroll').forEach((scrollEl) => {
+                if (scrollEl.dataset.dragScrollReady === 'true') return;
+                scrollEl.dataset.dragScrollReady = 'true';
+
+                let isDragging = false;
+                let hasMoved = false;
+                let startX = 0;
+                let startY = 0;
+                let startLeft = 0;
+                let startTop = 0;
+
+                scrollEl.addEventListener('pointerdown', (event) => {
+                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+                    isDragging = true;
+                    hasMoved = false;
+                    startX = event.clientX;
+                    startY = event.clientY;
+                    startLeft = scrollEl.scrollLeft;
+                    startTop = scrollEl.scrollTop;
+                    scrollEl.classList.add('is-dragging');
+                    scrollEl.setPointerCapture(event.pointerId);
+                });
+
+                scrollEl.addEventListener('pointermove', (event) => {
+                    if (!isDragging) return;
+
+                    const deltaX = event.clientX - startX;
+                    const deltaY = event.clientY - startY;
+
+                    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+                        hasMoved = true;
+                        event.preventDefault();
+                    }
+
+                    scrollEl.scrollLeft = startLeft - deltaX;
+                    scrollEl.scrollTop = startTop - deltaY;
+                }, { passive: false });
+
+                const stopDragging = (event) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    scrollEl.classList.remove('is-dragging');
+                    if (scrollEl.hasPointerCapture(event.pointerId)) {
+                        scrollEl.releasePointerCapture(event.pointerId);
+                    }
+
+                    if (hasMoved) {
+                        scrollEl.dataset.preventNextClick = 'true';
+                        setTimeout(() => {
+                            scrollEl.dataset.preventNextClick = 'false';
+                        }, 0);
+                    }
+                };
+
+                scrollEl.addEventListener('pointerup', stopDragging);
+                scrollEl.addEventListener('pointercancel', stopDragging);
+                scrollEl.addEventListener('click', (event) => {
+                    if (scrollEl.dataset.preventNextClick === 'true') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                }, true);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', enableKpiTableDragScroll);
 
     </script>
 </body>

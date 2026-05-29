@@ -267,6 +267,68 @@
             padding: 0;
         }
 
+        .aibi-chart-shell {
+            width: 100%;
+            max-width: 100%;
+            max-height: min(640px, 72vh);
+            overflow-x: scroll;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-x pan-y;
+            cursor: grab;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border: 1px solid rgba(51, 65, 85, 0.7);
+            border-radius: 1rem;
+            background: rgba(15, 23, 42, 0.58);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 40px rgba(0,0,0,0.22);
+            scrollbar-gutter: stable both-edges;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(96, 165, 250, 0.8) rgba(255,255,255,0.08);
+        }
+
+        .aibi-chart-shell.is-dragging {
+            cursor: grabbing;
+            user-select: none;
+        }
+
+        .aibi-chart-shell::after {
+            content: '';
+            position: sticky;
+            right: -1rem;
+            top: 0;
+            float: right;
+            width: 34px;
+            height: 100%;
+            min-height: 240px;
+            margin-left: -34px;
+            pointer-events: none;
+            background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.82));
+            border-radius: 0 1rem 1rem 0;
+            z-index: 5;
+        }
+
+        .aibi-chart-shell::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .aibi-chart-shell::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 999px;
+        }
+
+        .aibi-chart-shell::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, rgba(59,130,246,0.95), rgba(178,48,60,0.95));
+            border-radius: 999px;
+        }
+
+        .aibi-chart-canvas {
+            width: 760px;
+            min-width: 760px;
+            max-width: none;
+        }
+
         /* Thinking animation dots */
         .typing-dot {
             width: 6px;
@@ -310,6 +372,256 @@
             overflow: hidden;
             min-height: 44px;
             max-height: 200px;
+        }
+    </style>
+
+    <style>
+        /* Responsive chat overrides */
+        * {
+            min-width: 0;
+        }
+
+        .markdown-body,
+        #chat-container {
+            overflow-wrap: anywhere;
+        }
+
+        .suggestion-carousel {
+            width: 100%;
+            position: relative;
+        }
+
+        .suggestion-track {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory;
+            padding: 4px 2px 18px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(59, 130, 246, 0.85) rgba(255, 255, 255, 0.08);
+        }
+
+        .suggestion-track::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .suggestion-track::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+        }
+
+        .suggestion-track::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.95), rgba(148, 37, 48, 0.95));
+            border-radius: 999px;
+        }
+
+        .suggestion-card {
+            flex: 0 0 min(320px, 82vw);
+            scroll-snap-align: start;
+            text-align: left;
+            font: inherit;
+            appearance: none;
+        }
+
+        .suggestion-card:focus-visible {
+            outline: 2px solid rgba(96, 165, 250, 0.85);
+            outline-offset: 4px;
+        }
+
+        .suggestion-nav-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgb(148 163 184);
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(51, 65, 85, 0.8);
+            transition: all 220ms ease;
+        }
+
+        .suggestion-nav-btn:hover {
+            color: #fff;
+            border-color: rgba(59, 130, 246, 0.45);
+            background: rgba(37, 99, 235, 0.18);
+            box-shadow: 0 0 18px rgba(59, 130, 246, 0.14);
+        }
+
+        .suggestion-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba(100, 116, 139, 0.45);
+            transition: all 220ms ease;
+        }
+
+        .suggestion-dot.active {
+            width: 22px;
+            background: linear-gradient(90deg, #60a5fa, #de727c);
+            box-shadow: 0 0 14px rgba(96, 165, 250, 0.35);
+        }
+
+        @media (min-width: 768px) {
+            .suggestion-card {
+                flex-basis: calc((100% - 32px) / 3);
+                min-width: 250px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            html,
+            body {
+                height: auto !important;
+                min-height: 100%;
+                overflow-x: hidden;
+            }
+
+            body > header {
+                padding: 12px 14px !important;
+                gap: 10px !important;
+            }
+
+            body > header a {
+                padding: 10px 12px !important;
+            }
+
+            body > header a span {
+                display: none !important;
+            }
+
+            body > header > div:last-child {
+                display: none !important;
+            }
+
+            body > header h1 {
+                font-size: 11px !important;
+                letter-spacing: 0.08em !important;
+            }
+
+            #chat-container {
+                max-width: 100% !important;
+                padding: 88px 14px 180px !important;
+                gap: 20px !important;
+            }
+
+            #welcome-screen {
+                min-height: auto !important;
+                margin-top: 12px !important;
+            }
+
+            #welcome-screen h2 {
+                font-size: clamp(1.75rem, 9vw, 2.4rem) !important;
+                line-height: 1.08 !important;
+            }
+
+            #welcome-screen p {
+                font-size: 0.95rem !important;
+            }
+
+            .flashlight-card {
+                min-height: auto !important;
+            }
+
+            .suggestion-track {
+                gap: 12px;
+                padding-bottom: 14px;
+            }
+
+            .suggestion-card {
+                flex-basis: min(286px, 84vw);
+            }
+
+            .suggestion-nav-btn {
+                width: 34px;
+                height: 34px;
+                border-radius: 12px;
+            }
+
+            #chat-container [class*="max-w-[85%]"] {
+                max-width: 92% !important;
+            }
+
+            #chat-container .flex.gap-4.w-full.max-w-4xl.group {
+                gap: 10px !important;
+            }
+
+            .markdown-body table,
+            .markdown-body pre {
+                display: block;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .aibi-chart-shell {
+                padding: 0.75rem;
+                margin: 1.25rem 0;
+            }
+
+            .aibi-chart-canvas {
+                width: 760px;
+                min-width: 760px;
+            }
+
+            body > div.fixed.bottom-0 {
+                padding: 72px 12px 16px !important;
+            }
+
+            #chat-form {
+                align-items: flex-end !important;
+                gap: 8px !important;
+                padding: 8px 8px 8px 14px !important;
+            }
+
+            #chat-input {
+                min-height: 44px !important;
+                font-size: 16px !important;
+            }
+
+            #send-btn {
+                width: 44px !important;
+                height: 44px !important;
+                border-radius: 16px !important;
+            }
+        }
+
+        @media (max-width: 420px) {
+            body > header {
+                padding-inline: 10px !important;
+            }
+
+            body > header .flex.items-center.gap-3 {
+                gap: 8px !important;
+            }
+
+            #chat-container {
+                padding-inline: 10px !important;
+                padding-bottom: 170px !important;
+            }
+
+            body > div.fixed.bottom-0 {
+                padding-inline: 8px !important;
+            }
+
+            #chat-form {
+                padding-left: 12px !important;
+            }
+        }
+
+        @media (max-height: 560px) and (orientation: landscape) {
+            #chat-container {
+                padding-top: 76px !important;
+                padding-bottom: 140px !important;
+            }
+
+            body > div.fixed.bottom-0 {
+                padding-top: 44px !important;
+                padding-bottom: 10px !important;
+            }
         }
     </style>
 </head>
@@ -388,47 +700,117 @@
                 </p>
             </div>
 
-            <!-- Symmetric Grid Suggestions -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl mx-auto reveal delay-500">
-                <!-- Card 1 -->
-                <div class="col-span-1 flashlight-card border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-brand-500/50 flex flex-col justify-between min-h-[140px]"
-                    onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                        <iconify-icon icon="solar:magnifer-linear" class="text-xl text-brand-400"></iconify-icon>
+            <!-- Strategic Prompt Carousel -->
+            <div class="suggestion-carousel max-w-5xl mx-auto reveal delay-500">
+                <div class="flex items-center justify-between gap-4 mb-3 px-1">
+                    <div class="flex items-center gap-2 text-slate-400">
+                        <iconify-icon icon="solar:stars-line-duotone" class="text-brand-400 text-lg"></iconify-icon>
+                        <span class="text-[11px] font-bold tracking-[0.24em] uppercase">Perguntas estratégicas</span>
                     </div>
-                    <div class="suggestion-text hidden">Top 5 Operadoras em São Paulo</div>
-                    <h3
-                        class="text-sm font-medium text-slate-300 group-hover:text-brand-300 transition-colors leading-snug">
-                        Top 5 Operadoras em São Paulo</h3>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="suggestion-prev" class="suggestion-nav-btn" aria-label="Anterior">
+                            <iconify-icon icon="solar:alt-arrow-left-linear" class="text-lg"></iconify-icon>
+                        </button>
+                        <button type="button" id="suggestion-next" class="suggestion-nav-btn" aria-label="Próxima">
+                            <iconify-icon icon="solar:alt-arrow-right-linear" class="text-lg"></iconify-icon>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Card 2 -->
-                <div class="col-span-1 flashlight-card wine-glow border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-wine-500/50 flex flex-col justify-between min-h-[140px]"
-                    onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-wine-500/10 border border-wine-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                        <iconify-icon icon="solar:chart-square-linear" class="text-xl text-wine-400"></iconify-icon>
-                    </div>
-                    <div class="suggestion-text hidden">Comparativo Odontogroup x Sulamérica</div>
-                    <h3
-                        class="text-sm font-medium text-slate-300 group-hover:text-wine-300 transition-colors leading-snug">
-                        Comparativo Odontogroup x Sulamérica</h3>
+                <div id="suggestion-carousel-track" class="suggestion-track custom-scrollbar">
+                    <button type="button"
+                        class="suggestion-card flashlight-card border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-brand-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <iconify-icon icon="solar:ranking-linear" class="text-xl text-brand-400"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Compare a Odontogroup com as 5 maiores operadoras em São Paulo por vidas ativas, destacando gap absoluto, diferença percentual e leitura estratégica.</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-300/80">Competição</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-brand-300 transition-colors leading-snug">
+                                Odontogroup vs líderes em São Paulo</h3>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                        class="suggestion-card flashlight-card wine-glow border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-wine-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-wine-500/10 border border-wine-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <iconify-icon icon="solar:map-point-wave-linear" class="text-xl text-wine-400"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Quais regiões e UFs apresentam maior oportunidade para a Odontogroup considerando alto volume de beneficiários, baixa presença relativa e concorrentes dominantes?</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-wine-300/80">Expansão</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-wine-300 transition-colors leading-snug">
+                                Onde a Odontogroup deveria priorizar expansão?</h3>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                        class="suggestion-card flashlight-card border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-brand-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mb-4 group-hover:bg-brand-500/10 group-hover:border-brand-500/20 transition-colors duration-500">
+                                <iconify-icon icon="solar:city-linear"
+                                    class="text-xl text-slate-400 group-hover:text-brand-400 transition-colors"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Liste os municípios onde a Odontogroup está mais distante da operadora líder em vidas ativas e priorize os maiores gaps para ação comercial.</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Municípios</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-brand-300 transition-colors leading-snug">
+                                Municípios com maior gap competitivo</h3>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                        class="suggestion-card flashlight-card wine-glow border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-wine-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-wine-500/10 border border-wine-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <iconify-icon icon="solar:document-add-linear" class="text-xl text-wine-400"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Analise o saldo de adesões e cancelamentos da Odontogroup versus concorrentes, indicando se há ganho ou perda de tração no recorte atual.</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-wine-300/80">Movimento</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-wine-300 transition-colors leading-snug">
+                                Adesões, cancelamentos e tração</h3>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                        class="suggestion-card flashlight-card border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-brand-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <iconify-icon icon="solar:users-group-rounded-linear" class="text-xl text-brand-400"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Quais faixas etárias e sexos concentram maior cobertura odontológica e onde existe espaço para a Odontogroup crescer?</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-300/80">Demografia</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-brand-300 transition-colors leading-snug">
+                                Perfil demográfico com potencial</h3>
+                        </div>
+                    </button>
+
+                    <button type="button"
+                        class="suggestion-card flashlight-card wine-glow border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-wine-500/50 flex flex-col justify-between min-h-[168px]"
+                        onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
+                        <div class="relative z-10">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-wine-500/10 border border-wine-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                                <iconify-icon icon="solar:chart-2-linear" class="text-xl text-wine-400"></iconify-icon>
+                            </div>
+                            <div class="suggestion-text hidden">Monte um resumo executivo com oportunidades, riscos competitivos e próximos passos comerciais para a Odontogroup com base nos dados disponíveis.</div>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-wine-300/80">Executivo</span>
+                            <h3 class="mt-2 text-sm font-semibold text-slate-200 group-hover:text-wine-300 transition-colors leading-snug">
+                                Resumo executivo de oportunidades</h3>
+                        </div>
+                    </button>
                 </div>
 
-                <!-- Card 3 -->
-                <div class="col-span-1 flashlight-card border border-slate-800 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-md rounded-2xl p-5 cursor-pointer group transition-all duration-300 shadow-lg hover:border-brand-500/50 flex flex-col justify-between min-h-[140px]"
-                    onclick="sendSuggestion(this)" onmousemove="handleMouseMove(event, this)">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mb-4 group-hover:bg-brand-500/10 group-hover:border-brand-500/20 transition-colors duration-500">
-                        <iconify-icon icon="solar:users-group-rounded-linear"
-                            class="text-xl text-slate-400 group-hover:text-brand-400 transition-colors"></iconify-icon>
-                    </div>
-                    <div class="suggestion-text hidden">Demografia de vidas no Nordeste</div>
-                    <h3
-                        class="text-sm font-medium text-slate-300 group-hover:text-brand-300 transition-colors leading-snug">
-                        Demografia de vidas no Nordeste</h3>
-                </div>
+                <div id="suggestion-carousel-dots" class="flex justify-center gap-2 mt-3"></div>
             </div>
         </div>
 
@@ -516,8 +898,383 @@
             chatForm.dispatchEvent(new Event('submit'));
         }
 
+        function setupSuggestionCarousel() {
+            const track = document.getElementById('suggestion-carousel-track');
+            const prevBtn = document.getElementById('suggestion-prev');
+            const nextBtn = document.getElementById('suggestion-next');
+            const dotsWrap = document.getElementById('suggestion-carousel-dots');
+            if (!track || !prevBtn || !nextBtn || !dotsWrap) return;
+
+            const cards = Array.from(track.querySelectorAll('.suggestion-card'));
+            if (cards.length === 0) return;
+
+            let activeIndex = 0;
+            let scrollFrame = null;
+
+            dotsWrap.innerHTML = '';
+            const dots = cards.map((_, index) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'suggestion-dot';
+                dot.setAttribute('aria-label', `Sugestão ${index + 1}`);
+                dot.addEventListener('click', () => {
+                    cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                });
+                dotsWrap.appendChild(dot);
+                return dot;
+            });
+
+            const getClosestIndex = () => {
+                const trackLeft = track.getBoundingClientRect().left;
+                return cards.reduce((closestIndex, card, index) => {
+                    const closestDistance = Math.abs(cards[closestIndex].getBoundingClientRect().left - trackLeft);
+                    const currentDistance = Math.abs(card.getBoundingClientRect().left - trackLeft);
+                    return currentDistance < closestDistance ? index : closestIndex;
+                }, 0);
+            };
+
+            const updateState = () => {
+                activeIndex = getClosestIndex();
+                dots.forEach((dot, index) => dot.classList.toggle('active', index === activeIndex));
+                prevBtn.disabled = activeIndex === 0;
+                nextBtn.disabled = activeIndex === cards.length - 1;
+                prevBtn.classList.toggle('opacity-40', prevBtn.disabled);
+                nextBtn.classList.toggle('opacity-40', nextBtn.disabled);
+            };
+
+            const moveTo = (index) => {
+                const nextIndex = Math.max(0, Math.min(cards.length - 1, index));
+                cards[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+            };
+
+            prevBtn.addEventListener('click', () => moveTo(activeIndex - 1));
+            nextBtn.addEventListener('click', () => moveTo(activeIndex + 1));
+            track.addEventListener('scroll', () => {
+                if (scrollFrame) cancelAnimationFrame(scrollFrame);
+                scrollFrame = requestAnimationFrame(updateState);
+            }, { passive: true });
+            window.addEventListener('resize', updateState);
+
+            updateState();
+        }
+
         function scrollToBottom() {
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function compactNumber(value) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) return value;
+            const abs = Math.abs(number);
+            if (abs >= 1000000) return `${(number / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+            if (abs >= 1000) return `${(number / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`;
+            return number.toLocaleString('pt-BR');
+        }
+
+        function truncateLabel(value, maxLength = 24) {
+            const text = String(value ?? '');
+            return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+        }
+
+        function removeRepeatedResponseBlocks(text) {
+            let cleaned = text.trim();
+            const normalized = (value) => value.replace(/\s+/g, ' ').trim();
+
+            for (let cut = Math.floor(cleaned.length / 2) - 80; cut <= Math.floor(cleaned.length / 2) + 80; cut++) {
+                if (cut <= 0 || cut >= cleaned.length) continue;
+                const first = cleaned.slice(0, cut).trim();
+                const second = cleaned.slice(cut).trim();
+                if (first.length > 180 && normalized(first) === normalized(second)) {
+                    cleaned = first;
+                    break;
+                }
+            }
+
+            const blocks = cleaned.split(/\n{2,}/);
+            const seen = new Set();
+            return blocks.filter((block) => {
+                const key = normalized(block);
+                if (key.length < 120) return true;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            }).join('\n\n');
+        }
+
+        function findJsonArrayEnd(text, startIndex) {
+            let depth = 0;
+            let inString = false;
+            let escaped = false;
+
+            for (let i = startIndex; i < text.length; i++) {
+                const char = text[i];
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === '"') {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (char === '"') {
+                    inString = true;
+                } else if (char === '[') {
+                    depth++;
+                } else if (char === ']') {
+                    depth--;
+                    if (depth === 0) return i;
+                }
+            }
+
+            return -1;
+        }
+
+        function extractChartBlocks(text) {
+            const charts = [];
+            const markerRegex = /\[(BAR|LINE|PIE)\]\s*->\s*/g;
+            let output = '';
+            let cursor = 0;
+            let match;
+
+            while ((match = markerRegex.exec(text)) !== null) {
+                let jsonStart = markerRegex.lastIndex;
+                while (/\s/.test(text[jsonStart])) jsonStart++;
+                if (text[jsonStart] !== '[') continue;
+
+                const jsonEnd = findJsonArrayEnd(text, jsonStart);
+                if (jsonEnd === -1) continue;
+
+                const rawJson = text.slice(jsonStart, jsonEnd + 1);
+                const chartId = `chart-${Math.random().toString(36).slice(2, 11)}`;
+
+                try {
+                    const data = JSON.parse(rawJson);
+                    if (!Array.isArray(data) || data.length === 0) throw new Error('empty chart data');
+
+                    output += text.slice(cursor, match.index);
+                    output += `<div class="aibi-chart-shell"><div id="${chartId}" class="aibi-chart-canvas"></div></div>`;
+                    charts.push({ id: chartId, type: match[1], data });
+                    cursor = jsonEnd + 1;
+                    markerRegex.lastIndex = cursor;
+                } catch (error) {
+                    console.error('Failed to parse chart JSON:', error);
+                }
+            }
+
+            output += text.slice(cursor);
+            return { text: output, charts };
+        }
+
+        function renderAiChart({ id, type, data }) {
+            const chartEl = document.getElementById(id);
+            if (!chartEl || !window.ApexCharts) return;
+
+            const normalizedData = data
+                .map((item) => ({
+                    x: item.x ?? item.label ?? item.name ?? '',
+                    y: Number(item.y ?? item.value ?? item.total ?? 0)
+                }))
+                .filter((item) => item.x !== '' && Number.isFinite(item.y));
+
+            if (normalizedData.length === 0) return;
+
+            const isMobile = window.matchMedia('(max-width: 640px)').matches;
+            const categories = normalizedData.map((item) => String(item.x));
+            const seriesData = normalizedData.map((item) => item.y);
+            const apexType = type === 'LINE' ? 'line' : type === 'PIE' ? 'pie' : 'bar';
+            const chartHeight = apexType === 'bar'
+                ? Math.max(isMobile ? 320 : 320, normalizedData.length * (isMobile ? 58 : 54) + 96)
+                : 320;
+            const chartWidth = apexType === 'bar'
+                ? Math.max(isMobile ? 760 : 720, 420 + Math.max(...categories.map(label => label.length)) * (isMobile ? 7 : 6))
+                : Math.max(isMobile ? 520 : 620, 120 * normalizedData.length);
+
+            chartEl.style.height = `${chartHeight}px`;
+            chartEl.style.width = `${chartWidth}px`;
+            chartEl.style.minWidth = `${chartWidth}px`;
+
+            const options = {
+                series: apexType === 'pie' ? seriesData : [{ name: 'Valor', data: seriesData }],
+                chart: {
+                    type: apexType,
+                    height: chartHeight,
+                    width: chartWidth,
+                    foreColor: '#94a3b8',
+                    toolbar: { show: false },
+                    fontFamily: 'inherit',
+                    background: 'transparent',
+                    redrawOnParentResize: true,
+                    redrawOnWindowResize: true
+                },
+                colors: ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#14b8a6', '#eab308'],
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        horizontal: true,
+                        barHeight: isMobile ? '46%' : '58%',
+                        dataLabels: { position: 'center' }
+                    }
+                },
+                dataLabels: {
+                    enabled: apexType !== 'line',
+                    textAnchor: 'middle',
+                    offsetX: 0,
+                    style: {
+                        colors: ['#ffffff'],
+                        fontSize: isMobile ? '11px' : '12px',
+                        fontFamily: 'inherit',
+                        fontWeight: 800,
+                    },
+                    formatter: function (val) {
+                        const maxVal = Math.max(...seriesData);
+                        if (apexType === 'bar' && val < maxVal * 0.12) return '';
+                        return compactNumber(val);
+                    },
+                    dropShadow: {
+                        enabled: true,
+                        top: 1,
+                        left: 1,
+                        blur: 2,
+                        opacity: 0.75
+                    }
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shade: 'dark',
+                        type: 'horizontal',
+                        shadeIntensity: 0.6,
+                        gradientToColors: ['#60a5fa', '#a78bfa', '#f472b6', '#fb7185', '#fbbf24', '#2dd4bf', '#fde047'],
+                        inverseColors: false,
+                        opacityFrom: 1,
+                        opacityTo: 1,
+                        stops: [0, 100]
+                    }
+                },
+                stroke: {
+                    show: true,
+                    width: apexType === 'line' ? 3 : 1,
+                    curve: 'smooth',
+                    colors: apexType === 'line' ? ['#60a5fa'] : ['#2563eb', '#7c3aed', '#db2777', '#e11d48', '#d97706']
+                },
+                xaxis: {
+                    categories: apexType === 'pie' ? [] : categories,
+                    tickAmount: isMobile ? 3 : 5,
+                    labels: {
+                        rotate: 0,
+                        trim: true,
+                        hideOverlappingLabels: true,
+                        style: { colors: '#94a3b8', fontSize: isMobile ? '10px' : '11px' },
+                        formatter: function (val) {
+                            return typeof val === 'number' ? compactNumber(val) : val;
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        maxWidth: isMobile ? 116 : 180,
+                        style: { colors: '#94a3b8', fontSize: isMobile ? '10px' : '11px' },
+                        formatter: function (val) {
+                            return truncateLabel(val, isMobile ? 18 : 28);
+                        }
+                    }
+                },
+                labels: apexType === 'pie' ? categories : [],
+                legend: {
+                    position: 'bottom',
+                    fontSize: '11px',
+                    labels: { colors: '#cbd5e1' }
+                },
+                grid: {
+                    borderColor: '#334155',
+                    strokeDashArray: 4,
+                    padding: {
+                        left: isMobile ? 0 : 8,
+                        right: isMobile ? 8 : 14,
+                        bottom: 4
+                    }
+                },
+                theme: { mode: 'dark' },
+                tooltip: {
+                    theme: 'dark',
+                    y: {
+                        formatter: (val) => new Intl.NumberFormat('pt-BR').format(val)
+                    }
+                }
+            };
+
+            const chart = new ApexCharts(chartEl, options);
+            chart.render().then(() => {
+                enableChartDragScroll(chartEl.closest('.aibi-chart-shell'));
+            });
+        }
+
+        function enableChartDragScroll(shell) {
+            if (!shell || shell.dataset.dragScrollReady === 'true') return;
+            shell.dataset.dragScrollReady = 'true';
+
+            let isDragging = false;
+            let hasMoved = false;
+            let startX = 0;
+            let startY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            shell.addEventListener('pointerdown', (event) => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+                isDragging = true;
+                hasMoved = false;
+                startX = event.clientX;
+                startY = event.clientY;
+                startLeft = shell.scrollLeft;
+                startTop = shell.scrollTop;
+                shell.classList.add('is-dragging');
+                shell.setPointerCapture(event.pointerId);
+            });
+
+            shell.addEventListener('pointermove', (event) => {
+                if (!isDragging) return;
+
+                const deltaX = event.clientX - startX;
+                const deltaY = event.clientY - startY;
+
+                if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+                    hasMoved = true;
+                    event.preventDefault();
+                }
+
+                shell.scrollLeft = startLeft - deltaX;
+                shell.scrollTop = startTop - deltaY;
+            }, { passive: false });
+
+            const stopDragging = (event) => {
+                if (!isDragging) return;
+                isDragging = false;
+                shell.classList.remove('is-dragging');
+                if (shell.hasPointerCapture(event.pointerId)) {
+                    shell.releasePointerCapture(event.pointerId);
+                }
+
+                if (hasMoved) {
+                    shell.dataset.preventNextClick = 'true';
+                    setTimeout(() => {
+                        shell.dataset.preventNextClick = 'false';
+                    }, 0);
+                }
+            };
+
+            shell.addEventListener('pointerup', stopDragging);
+            shell.addEventListener('pointercancel', stopDragging);
+            shell.addEventListener('click', (event) => {
+                if (shell.dataset.preventNextClick === 'true') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }, true);
         }
 
         // Create Message Element using ds.html Premium Components
@@ -638,25 +1395,9 @@
                 if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
                 const data = await response.json();
-                let cleanResp = (data.resposta || "").trim().replace(/^[\r\n]+/, '');
-                
-                // Parse chart data
-                let chartType = null;
-                let chartData = null;
-                const chartRegex = /\[(BAR|LINE|PIE)\]\s*->\s*(\[.*?\])/;
-                const chartMatch = cleanResp.match(chartRegex);
-                const chartId = 'chart-' + Math.random().toString(36).substr(2, 9);
-                
-                if (chartMatch) {
-                    chartType = chartMatch[1];
-                    try {
-                        chartData = JSON.parse(chartMatch[2]);
-                        // Replace the raw text with a container for the chart
-                        cleanResp = cleanResp.replace(chartRegex, `<div id="${chartId}" class="w-full max-w-2xl my-6 bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 shadow-inner"></div>`);
-                    } catch (e) {
-                        console.error("Failed to parse chart JSON:", e);
-                    }
-                }
+                let cleanResp = removeRepeatedResponseBlocks((data.resposta || "").trim().replace(/^[\r\n]+/, ''));
+                const chartExtraction = extractChartBlocks(cleanResp);
+                cleanResp = chartExtraction.text;
 
                 let mdHtml = marked.parse(cleanResp);
                 
@@ -669,8 +1410,10 @@
                 chatContainer.appendChild(aiMsgEl);
                 setTimeout(() => aiMsgEl.classList.add('active'), 50);
 
+                chartExtraction.charts.forEach(renderAiChart);
+
                 // Render chart if data exists
-                if (chartData && document.getElementById(chartId)) {
+                if (false && chartData && document.getElementById(chartId)) {
                     const categories = chartData.map(d => d.x);
                     const seriesData = chartData.map(d => d.y);
                     
@@ -785,6 +1528,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
+            setupSuggestionCarousel();
             setTimeout(() => {
                 document.querySelectorAll('.reveal').forEach((el, index) => {
                     setTimeout(() => el.classList.add('active'), index * 100);

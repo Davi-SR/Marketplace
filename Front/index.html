@@ -243,6 +243,228 @@
             transition-delay: 400ms;
         }
     </style>
+
+    <style>
+        /* Responsive layout overrides */
+        * {
+            min-width: 0;
+        }
+
+        html.map-gesture-lock,
+        body.map-gesture-lock {
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+        }
+
+        #ranking-container,
+        #ranking-regiao-container {
+            overscroll-behavior: contain;
+        }
+
+        @media (min-width: 901px) and (max-width: 1180px) {
+            body > nav {
+                left: 16px !important;
+                top: 16px !important;
+                bottom: 16px !important;
+                width: 96px !important;
+            }
+
+            body > main {
+                padding-left: 136px !important;
+                padding-right: 24px !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            html,
+            body {
+                height: auto !important;
+                min-height: 100%;
+                overflow-x: hidden;
+            }
+
+            body {
+                display: block !important;
+                padding-bottom: 96px;
+            }
+
+            body > nav {
+                left: 0 !important;
+                right: 0 !important;
+                top: auto !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 78px !important;
+                border-radius: 24px 24px 0 0 !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 10px !important;
+                padding: 8px 12px !important;
+                animation: none !important;
+            }
+
+            body > nav > div:first-child,
+            body > nav > div:nth-child(2),
+            body > nav > div:last-child,
+            .aibi-tooltip-entry {
+                display: none !important;
+            }
+
+            body > nav > div:nth-child(3) {
+                flex: 0 1 auto !important;
+                width: auto !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+            }
+
+            body > nav .nav-item {
+                width: auto !important;
+                justify-content: center !important;
+            }
+
+            body > nav a,
+            body > nav .active-notch {
+                width: 54px !important;
+                height: 54px !important;
+                border-radius: 18px !important;
+                transform: none !important;
+            }
+
+            body > nav a:hover,
+            body > nav .active-notch:hover {
+                width: 54px !important;
+                transform: none !important;
+            }
+
+            .active-notch::before,
+            .active-notch::after {
+                display: none !important;
+            }
+
+            body > main {
+                height: auto !important;
+                min-height: 100vh;
+                padding: 24px 16px 108px !important;
+                overflow: visible !important;
+            }
+
+            body > main header {
+                margin-bottom: 24px !important;
+            }
+
+            body > main header h1 {
+                font-size: clamp(1.7rem, 8vw, 2.4rem) !important;
+                line-height: 1.05 !important;
+                overflow-wrap: anywhere;
+            }
+
+            body > main header h2 {
+                font-size: 1rem !important;
+                line-height: 1.4 !important;
+            }
+
+            body > main h3 {
+                overflow-wrap: anywhere;
+            }
+
+            body > main .grid {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            [class*="h-[calc"] {
+                height: auto !important;
+                min-height: 0 !important;
+            }
+
+            [class*="h-[700px]"],
+            [class*="h-[300px]"] {
+                height: auto !important;
+                min-height: 320px !important;
+            }
+
+            #mapa-uf {
+                height: 55vh !important;
+                min-height: 340px !important;
+                overscroll-behavior: contain;
+                touch-action: none !important;
+            }
+
+            #mapa-uf .leaflet-container,
+            #mapa-uf .leaflet-pane,
+            #mapa-uf .leaflet-map-pane {
+                overscroll-behavior: contain;
+                touch-action: none !important;
+            }
+
+            #ranking-container {
+                max-height: 360px;
+                min-height: 240px;
+            }
+
+            #ranking-regiao-container {
+                max-height: 260px;
+            }
+
+            .ft-table-wrapper {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .ft-table {
+                min-width: 760px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding-bottom: 88px;
+            }
+
+            body > nav {
+                height: 70px !important;
+                padding: 8px !important;
+                gap: 6px !important;
+            }
+
+            body > nav > div:nth-child(3) {
+                gap: 6px !important;
+            }
+
+            body > nav a,
+            body > nav .active-notch,
+            body > nav a:hover,
+            body > nav .active-notch:hover {
+                width: 46px !important;
+                height: 46px !important;
+                border-radius: 16px !important;
+            }
+
+            body > nav svg,
+            body > nav iconify-icon {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 24px !important;
+            }
+
+            body > main {
+                padding: 18px 12px 96px !important;
+            }
+
+            [class*="h-[700px]"],
+            [class*="h-[300px]"] {
+                min-height: 280px !important;
+            }
+
+            #mapa-uf {
+                min-height: 300px !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="flex h-screen w-full antialiased selection:bg-brand-600 selection:text-white bg-[#f8fafc]">
@@ -908,6 +1130,40 @@
         let mapInstance = null;
         let layerGroup = null;
 
+        function lockPageScrollInsideMap() {
+            const mapEl = document.getElementById('mapa-uf');
+            if (!mapEl || mapEl.dataset.scrollLockReady === 'true') return;
+
+            mapEl.dataset.scrollLockReady = 'true';
+            const enablePageLock = () => {
+                document.documentElement.classList.add('map-gesture-lock');
+                document.body.classList.add('map-gesture-lock');
+            };
+            const disablePageLock = () => {
+                document.documentElement.classList.remove('map-gesture-lock');
+                document.body.classList.remove('map-gesture-lock');
+            };
+            const keepGestureInsideMap = (event) => {
+                if (!mapEl.contains(event.target)) return;
+                if (event.cancelable) event.preventDefault();
+            };
+
+            if (window.L && L.DomEvent) {
+                L.DomEvent.disableScrollPropagation(mapEl);
+                L.DomEvent.disableClickPropagation(mapEl);
+            }
+
+            mapEl.addEventListener('touchstart', enablePageLock, { passive: true });
+            mapEl.addEventListener('pointerdown', enablePageLock, { passive: true });
+            mapEl.addEventListener('mouseleave', disablePageLock, { passive: true });
+            document.addEventListener('touchmove', keepGestureInsideMap, { passive: false, capture: true });
+            document.addEventListener('wheel', keepGestureInsideMap, { passive: false, capture: true });
+            document.addEventListener('touchend', disablePageLock, { passive: true });
+            document.addEventListener('touchcancel', disablePageLock, { passive: true });
+            document.addEventListener('pointerup', disablePageLock, { passive: true });
+            document.addEventListener('pointercancel', disablePageLock, { passive: true });
+        }
+
         async function loadMapaBeneficiarios() {
             if (!mapInstance) {
                 mapInstance = L.map('mapa-uf', {
@@ -926,6 +1182,7 @@
                 }).addTo(mapInstance);
 
                 layerGroup = L.layerGroup().addTo(mapInstance);
+                lockPageScrollInsideMap();
             }
 
             try {
