@@ -815,7 +815,7 @@
         }
 
         .kpi-table-scroll .ft-table {
-            width: max-content;
+            width: 100%;
             min-width: 960px;
         }
 
@@ -1380,7 +1380,7 @@
                 <!-- Table Content -->
                 <div class="kpi-table-shell relative z-10 p-2 overflow-hidden w-full flex-1">
                     <div class="ft-table-wrapper kpi-table-scroll custom-scrollbar">
-                        <table class="ft-table">
+                        <table class="ft-table w-full">
                             <thead>
                                 <tr>
                                     <th class="center" style="width: 15%;">Gênero</th>
@@ -1627,7 +1627,7 @@
                         const diff = val - (odontoVal || 0);
                         if (diff === 0 && !odontoVal) return ''; // ignore if no baseline
                         const isPos = diff >= 0;
-                        const colorClass = isPos ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                        const colorClass = isPos ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                         return `
                         <div class="mt-1 flex justify-end w-full">
                             <div class="px-1 py-0.5 rounded border text-[8px] font-bold flex items-center gap-1 ${colorClass}">
@@ -1707,7 +1707,7 @@
                     const diff = val - odontoVal;
                     if (diff === 0 && !odontoVal) return ''; // ignore if no baseline
                     const isPos = diff >= 0;
-                    const colorClass = isPos ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-red-400 border-red-400/20 bg-red-400/10';
+                    const colorClass = isPos ? 'text-red-400 border-red-400/20 bg-red-400/10' : 'text-green-400 border-green-400/20 bg-green-400/10';
                     return `
                     <div class="mt-1 flex justify-end w-full">
                         <div class="px-1 py-0.5 rounded border text-[8px] font-bold flex items-center gap-1 ${colorClass}">

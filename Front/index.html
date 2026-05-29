@@ -1080,7 +1080,7 @@
                     const comp = data.comparativo_odontogroup;
                     if (comp.beneficiarios > 0) {
                         const isPositive = comp.diferenca_percentual >= 0;
-                        const colorClass = isPositive ? 'text-green-400 bg-green-400/10 border-green-400/20' : 'text-red-400 bg-red-400/10 border-red-400/20';
+                        const colorClass = isPositive ? 'text-red-400 bg-red-400/10 border-red-400/20' : 'text-green-400 bg-green-400/10 border-green-400/20';
                         const sign = isPositive ? '+' : '-';
                         const absDiff = Math.abs(comp.diferenca_absoluta);
 
@@ -1231,7 +1231,7 @@
 
                     if (hasOperadoraFilter && !isOdontoFiltered && item.odontogroup_beneficiarios > 0) {
                         const isPositive = item.diferenca_percentual >= 0;
-                        const colorStr = isPositive ? '#4ade80' : '#f87171'; // green-400 : red-400
+                        const colorStr = isPositive ? '#f87171' : '#4ade80'; // red-400 : green-400
                         const sign = isPositive ? '+' : '-';
                         const absDiff = Math.abs(item.diferenca_absoluta);
                         compHTML = `
@@ -1386,7 +1386,7 @@
                     let compBadge = '';
                     if (hasOperadoraFilter && !isOdontoFiltered && item.odontogroup_beneficiarios > 0) {
                         const isPositive = item.diferenca_percentual >= 0;
-                        const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
+                        const colorClass = isPositive ? 'text-red-400' : 'text-green-400';
                         const sign = isPositive ? '+' : '-';
                         const absDiff = Math.abs(item.diferenca_absoluta);
                         compBadge = `<span class="absolute -bottom-3 right-0 text-[8px] font-bold ${colorClass} opacity-0 group-hover:opacity-100 transition-opacity bg-[#251e33] px-1 rounded-sm shadow-md z-20 border border-white/5 whitespace-nowrap flex items-center gap-0.5" title="${item.diferenca_percentual.toLocaleString('pt-BR')}%"><iconify-icon icon="${isPositive ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold'}" class="text-[8px]"></iconify-icon> ${formatNumber(absDiff)} vidas vs ODONTOGROUP</span>`;

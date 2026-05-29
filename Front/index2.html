@@ -1286,7 +1286,7 @@
                     let compBadge = '';
                     if (hasOperadoraFilter && !isOdontoFiltered && item.odontogroup_beneficiarios > 0) {
                         const isPositive = item.diferenca_percentual >= 0;
-                        const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
+                        const colorClass = isPositive ? 'text-red-400' : 'text-green-400';
                         const absDiff = Math.abs(item.diferenca_absoluta);
                         compBadge = `<span class="absolute -bottom-4 right-0 text-[9px] font-bold ${colorClass} opacity-0 group-hover:opacity-100 transition-opacity bg-[#251e33] px-1.5 rounded shadow-md z-20 border border-white/10 whitespace-nowrap flex items-center gap-1"><iconify-icon icon="${isPositive ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold'}"></iconify-icon> ${formatNumber(absDiff)} vidas vs ODONTOGROUP</span>`;
                     }
@@ -1417,7 +1417,7 @@
                 let compBadge = '';
                 if (hasOperadoraFilter && !isOdontoFiltered && item.odontogroup_beneficiarios > 0) {
                     const isPositive = item.diferenca_percentual >= 0;
-                    const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
+                    const colorClass = isPositive ? 'text-red-400' : 'text-green-400';
                     const absDiff = Math.abs(item.diferenca_absoluta);
                     compBadge = `<span class="absolute -bottom-4 right-0 text-[9px] font-bold ${colorClass} opacity-0 group-hover:opacity-100 transition-opacity bg-[#251e33] px-1.5 rounded shadow-md z-20 border border-white/10 whitespace-nowrap flex items-center gap-1"><iconify-icon icon="${isPositive ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold'}"></iconify-icon> ${formatNumber(absDiff)} vidas vs ODONTOGROUP</span>`;
                 }
@@ -1683,7 +1683,7 @@
                             if (!op.nome.toUpperCase().includes('ODONTOGROUP')) {
                                 const diff = op.diferenca_odonto;
                                 const isPositive = diff >= 0;
-                                const colorClass = isPositive ? 'text-green-400' : 'text-red-400';
+                                const colorClass = isPositive ? 'text-red-400' : 'text-green-400';
                                 const absDiff = Math.abs(diff);
                                 const badgeIcon = isPositive ? 'solar:alt-arrow-up-bold' : 'solar:alt-arrow-down-bold';
                                 const suffix = isPositive ? 'a mais' : 'a menos';
