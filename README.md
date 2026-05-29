@@ -36,13 +36,13 @@ Copy-Item env/prod.env.example env/prod.env
 
 Edite o arquivo criado e preencha `OPENAI_API_KEY`. Em produção, ajuste também `CORS_ALLOW_ORIGINS` para o domínio real.
 
-Para Docker, configure o caminho do DuckDB no arquivo de ambiente pelo `HOST_DUCKDB_PATH`. No seu ambiente local, por exemplo:
+Para Docker, configure o diretório do DuckDB no arquivo de ambiente pelo `HOST_DUCKDB_PATH`. No seu ambiente local Linux ou dentro do container, use um caminho relativo ou válido para o host, por exemplo:
 
 ```env
-HOST_DUCKDB_PATH=C:/Users/davi.ramos.ODONTOGROUP/Documents/ANS-DB/ANS.db
+HOST_DUCKDB_PATH=./data
 ```
 
-O Compose monta esse arquivo em `/database/ANS.db` dentro do container e a API usa `DB_URL=duckdb:////database/ANS.db`.
+O Compose monta esse diretório em `/database` dentro do container e a API usa `DB_URL=duckdb:////database/ANS.db` para acessar o banco em `/database/ANS.db`.
 
 Os arquivos `prompts/knowledge.JSON` e `prompts/prompt.md` precisam existir. O histórico do agente será persistido em:
 
@@ -80,6 +80,10 @@ API:   http://localhost:8001
 Docs:  http://localhost:8001/docs
 ```
 
+No ambiente de homologação, o serviço `frontend` expõe a porta `FRONT_PORT` (por padrão `8081`) e o nginx interno do container encaminha todo `/api/*` para o serviço `api` dentro da rede Docker. O `api` também publica uma porta própria configurada por `API_PORT` (por padrão `8001`) para que um nginx externo do servidor geral possa fazer proxy diretamente para essa porta do container.
+
+O banco de dados DuckDB é montado no container em `/database`. Use `HOST_DUCKDB_PATH` no arquivo `.env` para apontar o diretório do host que conterá `ANS.db`, e o container usa `DB_URL=duckdb:////database/ANS.db` internamente para acessar o banco de forma dinâmica.
+
 ## Subir Produção
 
 ```powershell
@@ -109,10 +113,10 @@ Verificar saúde:
 curl http://localhost:8000/api/health
 ```
 
-Se o campo `gold_marketplace_odontogroup_rows` voltar `0`, o Docker está lendo um banco vazio. Confirme se `HOST_DUCKDB_PATH` aponta para o DuckDB populado:
+Se o campo `gold_marketplace_odontogroup_rows` voltar `0`, o Docker está lendo um banco vazio. Confirme se `HOST_DUCKDB_PATH` aponta para o diretório que contém `ANS.db` populado:
 
 ```env
-HOST_DUCKDB_PATH=C:/Users/davi.ramos.ODONTOGROUP/Documents/ANS-DB/ANS.db
+HOST_DUCKDB_PATH=./data
 ```
 
 Depois reinicie a API para recarregar o snapshot em memória:
@@ -136,7 +140,7 @@ docker-compose --env-file env/dev.env -f docker-compose.dev.yml build --no-cache
 ## Observações Operacionais
 
 - `data/` e `runtime/` ficam fora da imagem e não devem ser versionados.
-- O banco usado pelo Docker é o arquivo apontado em `HOST_DUCKDB_PATH`; dentro do container ele aparece como `/database/ANS.db`.
+- O banco usado pelo Docker é o diretório apontado em `HOST_DUCKDB_PATH`; dentro do container ele aparece como `/database/ANS.db`.
 - Se o DBeaver estiver conectado ao DuckDB em modo que bloqueia escrita/leitura, a API pode falhar ao abrir o arquivo. Desconecte/feche o DBeaver ou rode o container contra uma cópia do `.db`.
 - O front usa `/api` quando servido pelo Nginx, mas mantém fallback para `http://127.0.0.1:8000` quando aberto diretamente via arquivo local.
 - O dashboard usa snapshot em memória no startup; após trocar o DuckDB, reinicie os containers.

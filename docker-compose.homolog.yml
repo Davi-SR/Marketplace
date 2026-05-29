@@ -11,17 +11,18 @@ services:
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      DB_URL: duckdb:////database/ANS.db
-      AIBI_STORAGE_PATH: /app/runtime/aibi_storage.db
-      PROMPTS_DIR: /app/prompts
+      DB_URL: ${DB_URL:-duckdb:////database/ANS.db}
+      AIBI_STORAGE_PATH: ${AIBI_STORAGE_PATH:-/app/runtime/aibi_storage.db}
+      PROMPTS_DIR: ${PROMPTS_DIR:-/app/prompts}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-*}
       PYTHONUNBUFFERED: "1"
     volumes:
       - type: bind
-        source: ${HOST_DUCKDB_PATH:-./data/banco_odontogroup.db}
-        target: /database/ANS.db
-        read_only: true
+        source: ${HOST_DUCKDB_PATH:-./data}
+        target: /database
       - ./runtime:/app/runtime
+    expose:
+      - "8000"
     ports:
       - "${API_PORT:-8001}:8000"
     restart: unless-stopped
@@ -40,6 +41,8 @@ services:
     image: odontogroup-marketplace-frontend:${IMAGE_TAG:-homolog}
     depends_on:
       - api
+    expose:
+      - "80"
     ports:
       - "${FRONT_PORT:-8081}:80"
     restart: unless-stopped
